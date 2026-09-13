@@ -1,0 +1,79 @@
+.topbar {
+  height: 68px;
+  background: #172f31;
+  color: #eff0e7;
+  display: flex;
+  align-items: center;
+  padding: 0 28px;
+  gap: 32px;
+  justify-content: space-between;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 250px;
+}
+
+.brand-mark {
+  display: grid;
+  place-items: center;
+  width: 31px;
+  height: 31px;
+  border: 1px solid #d77941;
+  color: #d77941;
+  font-size: 25px;
+  line-height: 1;
+}
+
+.brand strong {
+  display: block;
+  font-size: 18px;
+  letter-spacing: .5px;
+}
+
+.eyebrow {
+  display: block;
+  font: 10px/1.2 monospace;
+  letter-spacing: 1.4px;
+  color: #879897;
+}
+
+.export-button {
+  border: 0;
+  background: #d77941;
+  color: #fff9ed;
+  padding: 12px 17px;
+  font-size: 12px;
+  letter-spacing: .4px;
+}
+
+.export-button span {
+  margin-left: 14px;
+  font-size: 17px;
+}
+
+@media (max-width: 1050px) {
+  .topbar {
+    padding: 0 16px;
+  }
+
+  .brand {
+    width: 190px;
+  }
+
+}
+
+@media (max-width: 800px) {
+  .topbar {
+    flex-wrap: wrap;
+    height: auto;
+    padding: 14px 16px;
+    gap: 14px;
+  }
+
+  .export-button {
+    margin-left: auto;
+  }
+}

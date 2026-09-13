@@ -1,0 +1,34 @@
+.app-shell {
+  min-height: 100vh;
+  background: #e8e9e2;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: 270px minmax(460px, 1fr) 270px;
+  height: calc(100vh - 68px);
+  min-height: 650px;
+}
+
+.sidebar {
+  background: #f4f3eb;
+  border-right: 1px solid #d2d4cb;
+}
+
+@media (max-width: 1050px) {
+  .workspace {
+    grid-template-columns: 220px minmax(400px, 1fr) 230px;
+  }
+}
+
+@media (max-width: 800px) {
+  .workspace {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .sidebar {
+    min-height: 300px;
+    border: 0;
+  }
+}
