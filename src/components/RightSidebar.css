@@ -66,6 +66,13 @@
   outline-color: #d77941;
 }
 
+.operation-name-field small {
+  display: block;
+  margin-top: 5px;
+  color: #99a19a;
+  font-size: 9px;
+}
+
 .depth-field {
   margin-top: 15px;
 }

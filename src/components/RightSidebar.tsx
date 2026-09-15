@@ -33,6 +33,11 @@ export function RightSidebar({ selected, stock, onDelete, onUpdate }: RightSideb
             <span>{selected.name}<small>SVG vector object</small></span>
           </div>
           <div className="inspector-section">
+            <label className="operation-name-field">
+              Operation name
+              <input type="text" value={selected.operationName} onChange={(event) => onUpdate({ operationName: event.target.value })} />
+              <small>Paths with the same name export together</small>
+            </label>
             <div className="section-title">CUT OPERATION <span>PATH</span></div>
             <select className="operation-select" value={selected.operation} onChange={(event) => onUpdate({ operation: event.target.value as CutOperation })}>
               {Object.entries(operationLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}

@@ -5,6 +5,7 @@ import { Canvas } from './components/Canvas'
 import { Header } from './components/Header'
 import { LeftSidebar } from './components/LeftSidebar'
 import { RightSidebar } from './components/RightSidebar'
+import { createGcodeZip } from './gcode/generator'
 import { createImportedObjects, extractPathSvgs } from './utils/svg'
 import type { Point, Stock, SvgObject } from './types/cnc'
 
@@ -58,10 +59,20 @@ function App() {
 
   const handleMove = (id: number, point: Point) => updateObject(id, point)
   const handleResize = (id: number, changes: Pick<SvgObject, 'width' | 'height' | 'x' | 'y'>) => updateObject(id, changes)
+  const downloadGcode = async () => {
+    if (objects.length === 0) return
+    const blob = await createGcodeZip(objects, stock)
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'simplecnc-gcode.zip'
+    link.click()
+    URL.revokeObjectURL(url)
+  }
 
   return (
     <main className="app-shell">
-      <Header onGenerateGCode={() => undefined} />
+      <Header onGenerateGCode={downloadGcode} />
       <div className="workspace">
         <LeftSidebar objects={objects} stock={stock} fileInput={fileInput} onImport={importFiles} onSelect={setSelectedId} onStockChange={updateStock} onStockPreset={updateStockPreset} selectedId={selectedId} />
         <Canvas objects={objects} selectedId={selectedId} stock={stock} zoom={zoom} onZoomChange={setZoom} onSelect={setSelectedId} onMove={handleMove} onResize={handleResize} />

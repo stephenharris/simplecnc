@@ -3,7 +3,11 @@ export type CutOperation = 'cut-on-path' | 'cut-outside' | 'cut-inside' | 'pocke
 export type SvgObject = {
   id: number
   name: string
+  operationName: string
   src: string
+  pathData: string
+  viewBoxWidth: number
+  viewBoxHeight: number
   width: number
   height: number
   x: number
@@ -23,3 +27,5 @@ export type Point = {
   x: number
   y: number
 }
+
+export type Contour = Point[]

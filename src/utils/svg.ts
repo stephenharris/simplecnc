@@ -2,13 +2,16 @@ import type { SvgObject } from '../types/cnc'
 
 /** Reads the SVG viewBox or intrinsic dimensions and maps them to a 100 mm import width. */
 export const getSvgSize = (svg: string) => {
+  const { width: sourceWidth, height: sourceHeight } = getSvgCoordinateSize(svg)
+  const targetWidth = 100
+  return { width: targetWidth, height: Math.max(12, targetWidth * sourceHeight / sourceWidth) }
+}
+
+const getSvgCoordinateSize = (svg: string) => {
   const viewBox = svg.match(/viewBox=["']\s*[-\d.]+\s+[-\d.]+\s+([\d.]+)\s+([\d.]+)\s*["']/i)
   const width = svg.match(/\bwidth=["']([\d.]+)(?:px|mm)?["']/i)
   const height = svg.match(/\bheight=["']([\d.]+)(?:px|mm)?["']/i)
-  const sourceWidth = Number(viewBox?.[1] ?? width?.[1] ?? 100)
-  const sourceHeight = Number(viewBox?.[2] ?? height?.[1] ?? 100)
-  const targetWidth = 100
-  return { width: targetWidth, height: Math.max(12, targetWidth * sourceHeight / sourceWidth) }
+  return { width: Number(viewBox?.[1] ?? width?.[1] ?? 100), height: Number(viewBox?.[2] ?? height?.[1] ?? 100) }
 }
 
 /** Extracts one standalone, renderable SVG for every path while preserving shared coordinates and group transforms. */
@@ -39,7 +42,11 @@ export const extractPathSvgs = (svg: string) => {
 export const createImportedObjects = (pathSvgs: string[], fileName: string, stockDepth: number): SvgObject[] => pathSvgs.map((pathSvg, index) => ({
   id: Date.now() + Math.random() + index,
   name: `${fileName} / path ${index + 1}`,
+  operationName: `${fileName} path ${index + 1}`,
   src: URL.createObjectURL(new Blob([pathSvg], { type: 'image/svg+xml' })),
+  pathData: new DOMParser().parseFromString(pathSvg, 'image/svg+xml').querySelector('path')?.getAttribute('d') ?? '',
+  viewBoxWidth: getSvgCoordinateSize(pathSvg).width,
+  viewBoxHeight: getSvgCoordinateSize(pathSvg).height,
   ...getSvgSize(pathSvg),
   x: 24,
   y: 24,
