@@ -1,4 +1,5 @@
 import type { SvgObject } from '../types/cnc'
+import bits from '../data/bits.json'
 
 /** Reads the SVG viewBox or intrinsic dimensions and maps them to a 100 mm import width. */
 export const getSvgSize = (svg: string) => {
@@ -52,5 +53,6 @@ export const createImportedObjects = (pathSvgs: string[], fileName: string, stoc
   y: 24,
   rotation: 0,
   operation: 'cut-on-path',
+  bitId: bits[0].id,
   depth: Math.min(3, stockDepth),
 }))

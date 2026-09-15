@@ -4,11 +4,11 @@ import { CutOnPathOperation } from './cut-on-path-operation'
 import { CutOutsideOperation } from './cut-outside-operation'
 import { PocketOperation } from './pocket-operation'
 
-export const createOperation = (object: SvgObject) => {
+export const createOperation = (object: SvgObject, toolDiameter: number) => {
   switch (object.operation) {
-    case 'cut-outside': return new CutOutsideOperation(object)
-    case 'cut-inside': return new CutInsideOperation(object)
-    case 'pocket': return new PocketOperation(object)
-    default: return new CutOnPathOperation(object)
+    case 'cut-outside': return new CutOutsideOperation(object, toolDiameter)
+    case 'cut-inside': return new CutInsideOperation(object, toolDiameter)
+    case 'pocket': return new PocketOperation(object, toolDiameter)
+    default: return new CutOnPathOperation(object, toolDiameter)
   }
 }

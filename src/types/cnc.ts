@@ -14,6 +14,7 @@ export type SvgObject = {
   y: number
   rotation: number
   operation: CutOperation
+  bitId: string
   depth: number
 }
 

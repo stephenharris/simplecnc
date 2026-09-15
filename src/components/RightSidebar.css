@@ -27,6 +27,34 @@
   font: 11px monospace;
 }
 
+.inspector-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-bottom: 1px solid #d2d4cb;
+  margin-top: 18px;
+}
+
+.inspector-tabs button {
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: #8a948d;
+  cursor: pointer;
+  padding: 10px 4px 9px;
+  text-transform: uppercase;
+  font: 10px monospace;
+  letter-spacing: 1px;
+}
+
+.inspector-tabs button:hover,
+.inspector-tabs button.active {
+  color: #364547;
+}
+
+.inspector-tabs button.active {
+  border-bottom-color: #d77941;
+}
+
 .file-icon {
   color: #d77941;
   border: 1px solid #d77941;

@@ -7,11 +7,13 @@ import { writeToolpath } from '../toolpath-writer'
 
 export abstract class GcodeOperation {
   protected readonly object: SvgObject
+  protected readonly toolDiameter: number
   protected readonly contourOffsetter = new ContourOffsetter()
   private readonly pathFlattener = new SvgPathFlattener()
 
-  constructor(object: SvgObject) {
+  constructor(object: SvgObject, toolDiameter: number) {
     this.object = object
+    this.toolDiameter = toolDiameter
   }
 
   generateDepthPasses(lines: string[], stock: Stock) {

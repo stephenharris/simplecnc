@@ -18,17 +18,19 @@ export class ContourOffsetter {
     return output.filter(isClosedContour)
   }
 
-  pocket(contours: Contour[], toolDiameter: number): Contour[] {
+  pocket(contours: Contour[], toolDiameter: number, stepOverRatio: number): Contour[] {
     const closedContours = contours.filter(isClosedContour)
     if (closedContours.length === 0) return []
+    if (stepOverRatio <= 0 || stepOverRatio > 1) throw new RangeError('Pocket step-over ratio must be greater than 0 and at most 1')
 
     const ringContours: Contour[] = []
+    const stepOverDistance = toolDiameter * stepOverRatio
     let currentContours = this.offset(closedContours, -toolDiameter / 2)
     while (currentContours.length > 0) {
       ringContours.push(...currentContours)
       const nextContours = currentContours.flatMap((contour) => {
         const currentArea = Math.abs(this.polygonArea(contour))
-        return this.offset([contour], -toolDiameter).filter((candidate) => Math.abs(this.polygonArea(candidate)) < currentArea - POINT_TOLERANCE)
+        return this.offset([contour], -stepOverDistance).filter((candidate) => Math.abs(this.polygonArea(candidate)) < currentArea - POINT_TOLERANCE)
       })
       if (nextContours.length === 0) break
       currentContours = nextContours
