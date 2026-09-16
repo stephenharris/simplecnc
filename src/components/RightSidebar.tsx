@@ -27,7 +27,13 @@ export function RightSidebar({ selected, stock, onDelete, onUpdate }: RightSideb
           <span className="eyebrow">03 / INSPECTOR</span>
           <h2>Transform</h2>
         </div>
-        <button className="delete-button" type="button" disabled={!selected} onClick={onDelete}>×</button>
+        {selected && (
+          <button className="delete-button" type="button" aria-label="Delete selected object" title="Delete selected object" onClick={onDelete}>
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" />
+            </svg>
+          </button>
+        )}
       </div>
 
       {selected ? (
