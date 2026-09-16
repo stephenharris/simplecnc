@@ -23,8 +23,8 @@ export function Canvas({ objects, selectedId, stock, zoom, onZoomChange, onSelec
     const rect = event.currentTarget.parentElement?.getBoundingClientRect()
     if (!rect) return
     const move = (moveEvent: globalThis.PointerEvent) => onMove(object.id, {
-      x: Math.max(0, Math.min(stock.width - object.width, initialX + ((moveEvent.clientX - startX) / rect.width) * stock.width)),
-      y: Math.max(0, Math.min(stock.height - object.height, initialY - ((moveEvent.clientY - startY) / rect.height) * stock.height)),
+      x: initialX + ((moveEvent.clientX - startX) / rect.width) * stock.width,
+      y: initialY - ((moveEvent.clientY - startY) / rect.height) * stock.height
     })
     const end = () => {
       window.removeEventListener('pointermove', move)
