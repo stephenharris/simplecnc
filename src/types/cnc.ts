@@ -16,6 +16,7 @@ export type SvgObject = {
   operation: CutOperation
   bitId: string
   depth: number
+  lockedProportions: boolean
 }
 
 export type Stock = {

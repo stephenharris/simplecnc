@@ -58,10 +58,10 @@ export function RightSidebar({ selected, stock, onDelete, onUpdate }: RightSideb
               <div className="inspector-section">
                 <div className="section-title">SIZE <span>MM</span></div>
                 <div className="field-grid">
-                  <label>Width<input type="number" value={Math.round(selected.width)} onChange={(event) => onUpdate({ width: Number(event.target.value) })} /></label>
-                  <label>Height<input type="number" value={Math.round(selected.height)} onChange={(event) => onUpdate({ height: Number(event.target.value) })} /></label>
+                  <label>Width<input type="number" min="12" step="0.1" value={selected.width} onChange={(event) => onUpdate({ width: Number(event.target.value) })} /></label>
+                  <label>Height<input type="number" min="12" step="0.1" value={selected.height} onChange={(event) => onUpdate({ height: Number(event.target.value) })} /></label>
                 </div>
-                <label className="toggle-row"><span>Lock proportions</span><input type="checkbox" defaultChecked /><i /></label>
+                <label className="toggle-row"><span>Lock proportions</span><input type="checkbox" checked={selected.lockedProportions} onChange={(event) => onUpdate({ lockedProportions: event.target.checked })} /><i /></label>
               </div>
               <div className="inspector-section">
                 <div className="section-title">ROTATION <span>DEGREES</span></div>

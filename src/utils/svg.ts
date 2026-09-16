@@ -55,4 +55,5 @@ export const createImportedObjects = (pathSvgs: string[], fileName: string, stoc
   operation: 'cut-on-path',
   bitId: bits[0].id,
   depth: Math.min(3, stockDepth),
+  lockedProportions: true,
 }))

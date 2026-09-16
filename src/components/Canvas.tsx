@@ -43,23 +43,26 @@ export function Canvas({ objects, selectedId, stock, zoom, onZoomChange, onSelec
     const startObjectX = object.x
     const startObjectY = object.y
     const rect = event.currentTarget.parentElement?.parentElement?.getBoundingClientRect()
-    if (!rect) return
+    if (!rect || startWidth <= 0 || startHeight <= 0) return
     const move = (moveEvent: globalThis.PointerEvent) => {
       const deltaX = ((moveEvent.clientX - startX) / rect.width) * stock.width
       const deltaY = ((moveEvent.clientY - startY) / rect.height) * stock.height
       const resizeFromLeft = corner.includes('l')
       const resizeFromTop = corner.includes('t')
       const aspectRatio = startWidth / startHeight
-      const horizontalScale = (startWidth + (resizeFromLeft ? -deltaX : deltaX)) / startWidth
-      const verticalScale = (startHeight + (resizeFromTop ? -deltaY : deltaY)) / startHeight
-      const scale = Math.max(0.12, Math.max(horizontalScale, verticalScale))
-      const width = Math.max(12, startWidth * scale)
-      const height = Math.max(12, width / aspectRatio)
+      const width = Math.max(12, startWidth + (resizeFromLeft ? -deltaX : deltaX))
+      const height = Math.max(12, startHeight + (resizeFromTop ? -deltaY : deltaY))
+      const lockedScale = Math.max(
+        0.12,
+        Math.max(width / startWidth, height / startHeight),
+      )
+      const resizedWidth = object.lockedProportions ? Math.max(12, startWidth * lockedScale) : width
+      const resizedHeight = object.lockedProportions ? Math.max(12, resizedWidth / aspectRatio) : height
       onResize(object.id, {
-        width,
-        height,
-        x: resizeFromLeft ? startObjectX + startWidth - width : startObjectX,
-        y: resizeFromTop ? startObjectY : startObjectY + startHeight - height,
+        width: resizedWidth,
+        height: resizedHeight,
+        x: resizeFromLeft ? startObjectX + startWidth - resizedWidth : startObjectX,
+        y: resizeFromTop ? startObjectY : startObjectY + startHeight - resizedHeight,
       })
     }
     const end = () => {

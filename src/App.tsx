@@ -18,7 +18,24 @@ function App() {
   const selected = objects.find((object) => object.id === selectedId)
 
   const updateObject = (id: number, changes: Partial<SvgObject>) => {
-    setObjects((current) => current.map((object) => object.id === id ? { ...object, ...changes } : object))
+    setObjects((current) => current.map((object) => {
+      if (object.id !== id) return object
+
+      const nextChanges = { ...changes }
+
+      if (object.lockedProportions) {
+        const aspectRatio = object.width > 0 && object.height > 0
+          ? object.width / object.height
+          : object.viewBoxWidth / object.viewBoxHeight
+        if (nextChanges.width !== undefined) {
+          nextChanges.height = nextChanges.width / aspectRatio
+        } else if (nextChanges.height !== undefined) {
+          nextChanges.width = nextChanges.height * aspectRatio
+        }
+      }
+
+      return { ...object, ...nextChanges }
+    }))
   }
 
   const updateSelected = (changes: Partial<SvgObject>) => {
