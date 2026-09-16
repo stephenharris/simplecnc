@@ -10,10 +10,22 @@ export class ContourOffsetter {
     contours.filter(isClosedContour).forEach((contour) => {
       const solution: ClipperLib.Paths = []
       const offsetter = new ClipperLib.ClipperOffset()
-      const clipperDelta = this.polygonArea(contour) > 0 ? delta : -delta
-      offsetter.AddPath(contour.map((point) => ({ X: Math.round(point.x * scale), Y: Math.round(point.y * scale) })), ClipperLib.JoinType.jtRound, ClipperLib.EndType.etClosedPolygon)
-      offsetter.Execute(solution, clipperDelta * scale)
-      output.push(...solution.map((path) => path.map((point) => ({ x: point.X / scale, y: point.Y / scale }))).map((path) => this.closeContour(path)))
+      
+      // ClipperLib only works with integers so we scale up the coordinates to preserve precision.
+      offsetter.AddPath(contour.map((point) => (
+        { 
+          X: Math.round(point.x * scale), 
+          Y: Math.round(point.y * scale) 
+        }
+      )), ClipperLib.JoinType.jtRound, ClipperLib.EndType.etClosedPolygon)
+      
+      //If delta is negative the polygon shrinks, if positive the polygon grows.
+      offsetter.Execute(solution, delta * scale)
+
+      //Now scale the coordinates back down to their original values and close the contour if necessary.
+      output.push(...solution
+          .map((path) => path.map((point) => ({ x: point.X / scale, y: point.Y / scale })))
+          .map((path) => this.closeContour(path)))
     })
     return output.filter(isClosedContour)
   }

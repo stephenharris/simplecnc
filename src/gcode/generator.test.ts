@@ -67,15 +67,15 @@ describe('gcode generator', () => {
     const pocket = generateGcode(makeObject({ operation: 'pocket', width: 40, height: 40, viewBoxWidth: 40, viewBoxHeight: 40, pathData: 'M 0 0 L 40 0 L 40 40 L 0 40 Z' }), stock)
     const contourStarts = pocket
       .split('\n')
-      .filter((line) => line.startsWith('G0 X'))
+      .filter((line) => line.startsWith('G0 X') && !line.startsWith('G0 X0'))
       .map((line) => {
         const values = line.match(/-?\d+(?:\.\d+)?/g) ?? []
-        return { x: Number(values[0]), y: Number(values[1]) }
+        return { x: Number(values[1]), y: Number(values[2]) }
       })
 
     expect(contourStarts.length).toBeGreaterThan(1)
-    expect(contourStarts[0].x).toBeGreaterThan(contourStarts.at(-1)?.x ?? 0)
-    expect(contourStarts[0].y).toBeGreaterThan(contourStarts.at(-1)?.y ?? 0)
+    expect(contourStarts[0].x).toBeLessThan(contourStarts.at(-1)?.x ?? 0)
+    expect(contourStarts[0].y).toBeLessThan(contourStarts.at(-1)?.y ?? 0)
   })
 
   it('creates one zip file per object', async () => {
