@@ -157,3 +157,6 @@
   font-size: 9px;
 }
 
+#svg-import-input {
+  display: none;
+}
