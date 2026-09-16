@@ -21,7 +21,10 @@ export const extractPathSvgs = (svg: string) => {
   const root = document.documentElement
   const paths = Array.from(root.querySelectorAll('path'))
   if (paths.length === 0) return [svg]
-  const attributes = ['viewBox', 'width', 'height', 'fill', 'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin', 'fill-rule', 'clip-rule']
+
+  // Build a string of all relevant attributes on the root SVG element to preserve in each extracted path SVG.
+  // Do not include width/height attributes, as this will be determined by the path.
+  const attributes = ['viewBox', 'fill', 'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin', 'fill-rule', 'clip-rule']
     .map((name) => root.getAttribute(name) ? ` ${name}="${root.getAttribute(name)}"` : '')
     .join('')
   const serializer = new XMLSerializer()
