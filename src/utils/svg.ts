@@ -1,3 +1,4 @@
+import { makeAbsolute, parseSVG } from 'svg-path-parser'
 import type { SvgObject } from '../types/cnc'
 import bits from '../data/bits.json'
 
@@ -62,6 +63,58 @@ const getPathBounds = (content: string, viewBox: string | null, fallback: { widt
   }
 }
 
+const translatePathData = (pathData: string, dx: number, dy: number) => {
+  if (Math.abs(dx) < 1e-9 && Math.abs(dy) < 1e-9) return pathData
+
+  const format = (value: number) => Number(value.toFixed(6)).toString()
+  const commands = makeAbsolute(parseSVG(pathData))
+
+  return commands.map((command) => {
+    const shift = (x: number, y: number) => ({ x: Number(format(x - dx)), y: Number(format(y - dy)) })
+
+    switch (command.code) {
+      case 'M': {
+        const point = shift(command.x, command.y)
+        return `M ${point.x} ${point.y}`
+      }
+      case 'L': {
+        const point = shift(command.x, command.y)
+        return `L ${point.x} ${point.y}`
+      }
+      case 'H': return `H ${format(command.x - dx)}`
+      case 'V': return `V ${format(command.y - dy)}`
+      case 'C': {
+        const start = shift(command.x1, command.y1)
+        const end = shift(command.x2, command.y2)
+        const target = shift(command.x, command.y)
+        return `C ${start.x} ${start.y} ${end.x} ${end.y} ${target.x} ${target.y}`
+      }
+      case 'Q': {
+        const control = shift(command.x1, command.y1)
+        const target = shift(command.x, command.y)
+        return `Q ${control.x} ${control.y} ${target.x} ${target.y}`
+      }
+      case 'A': {
+        const target = shift(command.x, command.y)
+        return `A ${format(command.rx)} ${format(command.ry)} ${format(command.xAxisRotation)} ${command.largeArc ? 1 : 0} ${command.sweep ? 1 : 0} ${target.x} ${target.y}`
+      }
+      case 'Z': return 'Z'
+      default: return ''
+    }
+  }).filter(Boolean).join(' ')
+}
+
+const getPathData = (svg: string) => svg.match(/<path\b[^>]*\bd=["']([^"']+)["']/i)?.[1] ?? ''
+
+const normalizeImportedSvg = (svg: string, pathBounds: number[] | undefined, localPathData: string) => {
+  if (!pathBounds || pathBounds.length !== 4) return svg
+
+  let normalized = svg.replace(/viewBox=["'][^"']+["']/i, `viewBox="0 0 ${pathBounds[2]} ${pathBounds[3]}"`)
+  normalized = normalized.replace(/\s(?:width|height)=["'][^"']+["']/gi, '')
+  normalized = normalized.replace(/<path\b([^>]*)\bd=["'][^"']*["']/i, `<path$1 d="${localPathData}"`)
+  return normalized
+}
+
 const readImportMetadata = (svg: string, name: string) => svg.match(new RegExp(`${name}="([^"]+)"`, 'i'))?.[1].trim().split(/\s+/).map(Number)
 
 const getImportedGeometry = (svg: string) => {
@@ -78,26 +131,34 @@ const getImportedGeometry = (svg: string) => {
 }
 
 /** Builds the initial editable object state for each imported standalone path. */
-export const createImportedObjects = (pathSvgs: string[], fileName: string, stockDepth: number): SvgObject[] => pathSvgs.map((pathSvg, index) => ({
-  ...getImportedGeometry(pathSvg),
-  id: Date.now() + Math.random() + index,
-  name: `${fileName} / path ${index + 1}`,
-  operationName: `${fileName} path ${index + 1}`,
-  src: URL.createObjectURL(new Blob([pathSvg], { type: 'image/svg+xml' })),
-  pathData: new DOMParser().parseFromString(pathSvg, 'image/svg+xml').querySelector('path')?.getAttribute('d') ?? '',
-  viewBoxWidth: getSvgCoordinateSize(pathSvg).width,
-  viewBoxHeight: getSvgCoordinateSize(pathSvg).height,
-  sourceViewBoxX: getSvgCoordinateSize(pathSvg).x,
-  sourceViewBoxY: getSvgCoordinateSize(pathSvg).y,
-  sourceViewBoxWidth: getSvgCoordinateSize(pathSvg).width,
-  sourceViewBoxHeight: getSvgCoordinateSize(pathSvg).height,
-  pathBoundsX: readImportMetadata(pathSvg, 'data-path-bounds')?.[0],
-  pathBoundsY: readImportMetadata(pathSvg, 'data-path-bounds')?.[1],
-  pathBoundsWidth: readImportMetadata(pathSvg, 'data-path-bounds')?.[2],
-  pathBoundsHeight: readImportMetadata(pathSvg, 'data-path-bounds')?.[3],
-  rotation: 0,
-  operation: 'cut-on-path',
-  bitId: bits[0].id,
-  depth: Math.min(3, stockDepth),
-  lockedProportions: true,
-}))
+export const createImportedObjects = (pathSvgs: string[], fileName: string, stockDepth: number): SvgObject[] => pathSvgs.map((pathSvg, index) => {
+  const pathBounds = readImportMetadata(pathSvg, 'data-path-bounds')
+  const originalPathData = getPathData(pathSvg)
+  const localPathData = pathBounds && pathBounds.length === 4
+    ? translatePathData(originalPathData, pathBounds[0], pathBounds[1])
+    : originalPathData
+
+  const normalizedSvg = normalizeImportedSvg(pathSvg, pathBounds, localPathData)
+
+  const defaultViewBox = pathBounds && pathBounds.length === 4 ? { width: pathBounds[2], height: pathBounds[3], x: 0, y: 0 } : getSvgCoordinateSize(pathSvg)
+
+  return {
+    ...getImportedGeometry(pathSvg),
+    id: Date.now() + Math.random() + index,
+    name: `${fileName} / path ${index + 1}`,
+    operationName: `${fileName} path ${index + 1}`,
+    src: URL.createObjectURL(new Blob([normalizedSvg], { type: 'image/svg+xml' })),
+    pathData: localPathData,
+    viewBoxWidth: defaultViewBox.width,
+    viewBoxHeight: defaultViewBox.height,
+    pathBoundsX: 0,
+    pathBoundsY: 0,
+    pathBoundsWidth: defaultViewBox.width,
+    pathBoundsHeight: defaultViewBox.height,
+    rotation: 0,
+    operation: 'cut-on-path',
+    bitId: bits[0].id,
+    depth: Math.min(3, stockDepth),
+    lockedProportions: true,
+  }
+})

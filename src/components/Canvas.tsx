@@ -100,13 +100,13 @@ export function Canvas({ objects, selectedId, stock, zoom, onZoomChange, onSelec
                 <img
                   src={object.src}
                   alt={object.name}
-                  style={object.sourceViewBoxWidth && object.pathBoundsWidth ? {
+                  style={{
                     position: 'absolute',
-                    width: `${object.sourceViewBoxWidth / object.pathBoundsWidth * 100}%`,
-                    height: `${(object.sourceViewBoxHeight ?? object.sourceViewBoxWidth) / (object.pathBoundsHeight ?? object.pathBoundsWidth) * 100}%`,
-                    left: `${-((object.pathBoundsX ?? 0) - (object.sourceViewBoxX ?? 0)) / object.pathBoundsWidth * 100}%`,
-                    top: `${-((object.pathBoundsY ?? 0) - (object.sourceViewBoxY ?? 0)) / (object.pathBoundsHeight ?? object.pathBoundsWidth) * 100}%`,
-                  } : undefined}
+                    inset: 0,
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'contain',
+                  }}
                 />
                 {object.id === selectedId && <>
                   <i className="handle tl" onPointerDown={(event) => beginResize(event, object, 'tl')} />

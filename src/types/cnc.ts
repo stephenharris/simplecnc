@@ -8,10 +8,6 @@ export type SvgObject = {
   pathData: string
   viewBoxWidth: number
   viewBoxHeight: number
-  sourceViewBoxX?: number
-  sourceViewBoxY?: number
-  sourceViewBoxWidth?: number
-  sourceViewBoxHeight?: number
   pathBoundsX?: number
   pathBoundsY?: number
   pathBoundsWidth?: number

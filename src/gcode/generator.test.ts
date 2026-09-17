@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import JSZip from 'jszip'
 import { createGcodeZip, generateGcode, isClosedContour, sanitizeOperationName } from './generator'
 import { toMachinePoint } from './helpers'
+import { createImportedObjects } from '../utils/svg'
 import type { Stock, SvgObject } from '../types/cnc'
 
 const stock: Stock = { width: 100, height: 100, depth: 2 }
@@ -73,6 +74,20 @@ describe('gcode generator', () => {
 
     expect(firstPoint).toEqual({ x: 30, y: 185.1215 })
     expect(generateGcode(snowmanBody, { width: 400, height: 300, depth: 12 })).toContain('G0 X30.000 Y185.121')
+  })
+
+  it('normalizes imported path coordinates to a local bounding-box origin', () => {
+    const [object] = createImportedObjects([
+      `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 300" data-parent-viewbox="0 0 200 300" data-path-bounds="12.836 5.144 173.659 290.243"><path d="M 12.836 5.144 L 186.495 295.387 Z" /></svg>`,
+    ], 'snowman', 2)
+
+    expect(object.pathData).toBe('M 0 0 L 173.659 290.243 Z')
+    expect(object.pathBoundsX).toBe(0)
+    expect(object.pathBoundsY).toBe(0)
+    expect(object.pathBoundsWidth).toBeCloseTo(173.659)
+    expect(object.pathBoundsHeight).toBeCloseTo(290.243)
+    expect(object.x).toBeCloseTo(6.418)
+    expect(object.y).toBeCloseTo(2.3065)
   })
 
   it('applies cutter-radius offsets for closed inside and outside cuts', () => {
