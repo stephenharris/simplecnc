@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import JSZip from 'jszip'
 import { createGcodeZip, generateGcode, isClosedContour, sanitizeOperationName } from './generator'
+import { toMachinePoint } from './helpers'
 import type { Stock, SvgObject } from '../types/cnc'
 
 const stock: Stock = { width: 100, height: 100, depth: 2 }
@@ -49,6 +50,29 @@ describe('gcode generator', () => {
     expect(gcode).toContain('G1 Z-1.200 F250')
     expect(gcode).toContain('G0 Z5.000')
     expect(gcode.endsWith('M2\n')).toBe(true)
+  })
+
+  it('keeps snowman paths at their individual imported scale', () => {
+    const snowmanBody = makeObject({
+      name: 'snowman.svg / path 2',
+      operationName: 'snowman path 2',
+      pathData: 'M 12.836 5.144 L 186.495 295.387 Z',
+      viewBoxWidth: 200,
+      viewBoxHeight: 300,
+      pathBoundsX: 12.836,
+      pathBoundsY: 5.144,
+      pathBoundsWidth: 173.659,
+      pathBoundsHeight: 290.243,
+      width: 86.8295,
+      height: 145.1215,
+      x: 30,
+      y: 40,
+      depth: 0.7,
+    })
+    const firstPoint = toMachinePoint({ x: 12.836, y: 5.144 }, snowmanBody)
+
+    expect(firstPoint).toEqual({ x: 30, y: 185.1215 })
+    expect(generateGcode(snowmanBody, { width: 400, height: 300, depth: 12 })).toContain('G0 X30.000 Y185.121')
   })
 
   it('applies cutter-radius offsets for closed inside and outside cuts', () => {

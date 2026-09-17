@@ -14,8 +14,18 @@ export const isClosedContour = (contour: Contour) => {
 }
 
 export const toMachinePoint = (point: Point, object: SvgObject): Point => {
-  const x = object.x + point.x / object.viewBoxWidth * object.width
-  const y = object.y + object.height - point.y / object.viewBoxHeight * object.height
+
+  const bounds = object.pathBoundsWidth && object.pathBoundsHeight
+    ? { x: object.pathBoundsX ?? 0, y: object.pathBoundsY ?? 0, width: object.pathBoundsWidth, height: object.pathBoundsHeight }
+    : { x: 0, y: 0, width: object.viewBoxWidth, height: object.viewBoxHeight }
+  
+  // Normalise the point inside the bounding box, scale it to the object size, 
+  // and then offset it to the object position. 
+  // Note that the y-axis is inverted in SVG coordinates, so we subtract the scaled y from the object height.
+  const x = object.x + (point.x - bounds.x) / bounds.width * object.width
+  const y = object.y + object.height - (point.y - bounds.y) / bounds.height * object.height
+  
+  // Finally, apply rotation around the center of the object.
   const angle = object.rotation * Math.PI / 180
   const center = { x: object.x + object.width / 2, y: object.y + object.height / 2 }
   return {

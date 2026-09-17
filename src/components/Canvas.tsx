@@ -97,7 +97,17 @@ export function Canvas({ objects, selectedId, stock, zoom, onZoomChange, onSelec
                 onPointerDown={(event) => { onSelect(object.id); beginDrag(event, object) }}
                 style={{ left: `${object.x / stock.width * 100}%`, bottom: `${object.y / stock.height * 100}%`, width: `${object.width / stock.width * 100}%`, height: `${object.height / stock.height * 100}%`, transform: `rotate(${object.rotation}deg)` }}
               >
-                <img src={object.src} alt={object.name} />
+                <img
+                  src={object.src}
+                  alt={object.name}
+                  style={object.sourceViewBoxWidth && object.pathBoundsWidth ? {
+                    position: 'absolute',
+                    width: `${object.sourceViewBoxWidth / object.pathBoundsWidth * 100}%`,
+                    height: `${(object.sourceViewBoxHeight ?? object.sourceViewBoxWidth) / (object.pathBoundsHeight ?? object.pathBoundsWidth) * 100}%`,
+                    left: `${-((object.pathBoundsX ?? 0) - (object.sourceViewBoxX ?? 0)) / object.pathBoundsWidth * 100}%`,
+                    top: `${-((object.pathBoundsY ?? 0) - (object.sourceViewBoxY ?? 0)) / (object.pathBoundsHeight ?? object.pathBoundsWidth) * 100}%`,
+                  } : undefined}
+                />
                 {object.id === selectedId && <>
                   <i className="handle tl" onPointerDown={(event) => beginResize(event, object, 'tl')} />
                   <i className="handle tr" onPointerDown={(event) => beginResize(event, object, 'tr')} />
