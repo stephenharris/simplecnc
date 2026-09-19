@@ -11,23 +11,32 @@ const operationLabels: Record<CutOperation, string> = {
 }
 
 type RightSidebarProps = {
-  selected: SvgObject | undefined
+  selectedObjects: SvgObject[]
   stock: Stock
   onDelete: () => void
   onUpdate: (changes: Partial<SvgObject>) => void
 }
 
-export function RightSidebar({ selected, stock, onDelete, onUpdate }: RightSidebarProps) {
+export function RightSidebar({ selectedObjects, stock, onDelete, onUpdate }: RightSidebarProps) {
   const [activeTab, setActiveTab] = useState<'transform' | 'cut'>('transform')
+  const selected = selectedObjects[0]
+  const selectionBounds = selectedObjects.length > 0 ? {
+    x: Math.min(...selectedObjects.map((object) => object.x)),
+    y: Math.min(...selectedObjects.map((object) => object.y)),
+    width: Math.max(...selectedObjects.map((object) => object.x + object.width)) - Math.min(...selectedObjects.map((object) => object.x)),
+    height: Math.max(...selectedObjects.map((object) => object.y + object.height)) - Math.min(...selectedObjects.map((object) => object.y)),
+  } : null
+
+  const transformTarget = selectedObjects.length > 1 ? selectionBounds : selected ? { x: selected.x, y: selected.y, width: selected.width, height: selected.height } : null
 
   return (
     <aside className="sidebar inspector">
       <div className="panel-heading">
         <div>
           <span className="eyebrow">03 / INSPECTOR</span>
-          <h2>Transform</h2>
+          <h2>{selectedObjects.length > 1 ? 'Group' : 'Transform'}</h2>
         </div>
-        {selected && (
+        {selectedObjects.length > 0 && (
           <button className="delete-button" type="button" aria-label="Delete selected object" title="Delete selected object" onClick={onDelete}>
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" />
@@ -36,37 +45,39 @@ export function RightSidebar({ selected, stock, onDelete, onUpdate }: RightSideb
         )}
       </div>
 
-      {selected ? (
+      {selectedObjects.length > 0 ? (
         <>
           <div className="selected-file">
             <span className="file-icon">⌁</span>
-            <span>{selected.name}<small>SVG vector object</small></span>
+            <span>{selectedObjects.length > 1 ? `${selectedObjects.length} objects selected` : selected.name}<small>{selectedObjects.length > 1 ? 'SVG vector group' : 'SVG vector object'}</small></span>
           </div>
-          <div className="inspector-tabs" role="tablist" aria-label="Object settings">
-            <button className={activeTab === 'transform' ? 'active' : ''} type="button" role="tab" aria-selected={activeTab === 'transform'} onClick={() => setActiveTab('transform')}>Transform</button>
-            <button className={activeTab === 'cut' ? 'active' : ''} type="button" role="tab" aria-selected={activeTab === 'cut'} onClick={() => setActiveTab('cut')}>Cut</button>
-          </div>
-          {activeTab === 'transform' ? (
+          {selectedObjects.length === 1 && (
+            <div className="inspector-tabs" role="tablist" aria-label="Object settings">
+              <button className={activeTab === 'transform' ? 'active' : ''} type="button" role="tab" aria-selected={activeTab === 'transform'} onClick={() => setActiveTab('transform')}>Transform</button>
+              <button className={activeTab === 'cut' ? 'active' : ''} type="button" role="tab" aria-selected={activeTab === 'cut'} onClick={() => setActiveTab('cut')}>Cut</button>
+            </div>
+          )}
+          {(activeTab === 'transform' || selectedObjects.length > 1) ? (
             <div role="tabpanel" aria-label="Transform settings">
               <div className="inspector-section">
                 <div className="section-title">POSITION <span>MM</span></div>
                 <div className="field-grid">
-                  <label>X<input type="number" value={Math.round(selected.x)} onChange={(event) => onUpdate({ x: Number(event.target.value) })} /></label>
-                  <label>Y<input type="number" value={Math.round(selected.y)} onChange={(event) => onUpdate({ y: Number(event.target.value) })} /></label>
+                  <label>X<input type="number" value={transformTarget ? Math.round(transformTarget.x) : 0} onChange={(event) => onUpdate({ x: Number(event.target.value) })} /></label>
+                  <label>Y<input type="number" value={transformTarget ? Math.round(transformTarget.y) : 0} onChange={(event) => onUpdate({ y: Number(event.target.value) })} /></label>
                 </div>
               </div>
               <div className="inspector-section">
                 <div className="section-title">SIZE <span>MM</span></div>
                 <div className="field-grid">
-                  <label>Width<input type="number" min="12" step="0.1" value={selected.width} onChange={(event) => onUpdate({ width: Number(event.target.value) })} /></label>
-                  <label>Height<input type="number" min="12" step="0.1" value={selected.height} onChange={(event) => onUpdate({ height: Number(event.target.value) })} /></label>
+                  <label>Width<input type="number" min="12" step="0.1" value={transformTarget ? transformTarget.width : 0} onChange={(event) => onUpdate({ width: Number(event.target.value) })} /></label>
+                  <label>Height<input type="number" min="12" step="0.1" value={transformTarget ? transformTarget.height : 0} onChange={(event) => onUpdate({ height: Number(event.target.value) })} /></label>
                 </div>
-                <label className="toggle-row"><span>Lock proportions</span><input type="checkbox" checked={selected.lockedProportions} onChange={(event) => onUpdate({ lockedProportions: event.target.checked })} /><i /></label>
+                {selected && <label className="toggle-row"><span>Lock proportions</span><input type="checkbox" checked={selected.lockedProportions} onChange={(event) => onUpdate({ lockedProportions: event.target.checked })} /><i /></label>}
               </div>
-              <div className="inspector-section">
+              {selected && <div className="inspector-section">
                 <div className="section-title">ROTATION <span>DEGREES</span></div>
                 <input className="wide-input" type="number" value={selected.rotation} onChange={(event) => onUpdate({ rotation: Number(event.target.value) })} />
-              </div>
+              </div>}
             </div>
           ) : (
             <div role="tabpanel" aria-label="Cut settings">

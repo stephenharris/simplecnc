@@ -7,13 +7,13 @@ type LeftSidebarProps = {
   stock: Stock
   fileInput: RefObject<HTMLInputElement | null>
   onImport: (event: ChangeEvent<HTMLInputElement>) => void
-  onSelect: (id: number) => void
+  onSelect: (id: number, additive: boolean) => void
   onStockChange: (changes: Partial<Stock>) => void
   onStockPreset: (value: string) => void
-  selectedId: number | null
+  selectedIds: number[]
 }
 
-export function LeftSidebar({ objects, stock, fileInput, onImport, onSelect, onStockChange, onStockPreset, selectedId }: LeftSidebarProps) {
+export function LeftSidebar({ objects, stock, fileInput, onImport, onSelect, onStockChange, onStockPreset, selectedIds }: LeftSidebarProps) {
   return (
     <aside className="sidebar left-panel">
       <div className="panel-heading">
@@ -33,10 +33,10 @@ export function LeftSidebar({ objects, stock, fileInput, onImport, onSelect, onS
       <div className="object-list">
         {objects.map((object, index) => (
           <button
-            className={`object-row ${object.id === selectedId ? 'selected' : ''}`}
+            className={`object-row ${selectedIds.includes(object.id) ? 'selected' : ''}`}
             key={object.id}
             type="button"
-            onClick={() => onSelect(object.id)}
+            onClick={(event) => onSelect(object.id, event.shiftKey || event.metaKey || event.ctrlKey)}
           >
             <span className="object-index">0{index + 1}</span>
             <span className="thumb"><img src={object.src} alt="" /></span>

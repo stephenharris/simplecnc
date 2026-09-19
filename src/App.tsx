@@ -6,16 +6,17 @@ import { Header } from './components/Header'
 import { LeftSidebar } from './components/LeftSidebar'
 import { RightSidebar } from './components/RightSidebar'
 import { createGcodeZip } from './gcode/generator'
+import { getSelectionBounds, scaleSelectionToBounds } from './utils/geometry'
 import { createImportedObjects, extractPathSvgs } from './utils/svg'
 import type { Point, Stock, SvgObject } from './types/cnc'
 
 function App() {
   const [objects, setObjects] = useState<SvgObject[]>([])
-  const [selectedId, setSelectedId] = useState<number | null>(null)
+  const [selectedIds, setSelectedIds] = useState<number[]>([])
   const [stock, setStock] = useState<Stock>({ width: 400, height: 300, depth: 12 })
   const [zoom, setZoom] = useState(100)
   const fileInput = useRef<HTMLInputElement>(null)
-  const selected = objects.find((object) => object.id === selectedId)
+  const selectedObjects = objects.filter((object) => selectedIds.includes(object.id))
 
   const updateObject = (id: number, changes: Partial<SvgObject>) => {
     setObjects((current) => current.map((object) => {
@@ -39,7 +40,53 @@ function App() {
   }
 
   const updateSelected = (changes: Partial<SvgObject>) => {
-    if (selectedId !== null) updateObject(selectedId, changes)
+    if (selectedIds.length === 0) return
+    if (selectedIds.length === 1) {
+      updateObject(selectedIds[0], changes)
+      return
+    }
+
+    const group = getSelectionBounds(selectedObjects)
+    const nextGroup = {
+      x: changes.x ?? group.x,
+      y: changes.y ?? group.y,
+      width: changes.width ?? group.width,
+      height: changes.height ?? group.height,
+    }
+
+    setObjects((current) => {
+      const scaled = scaleSelectionToBounds(
+        current.filter((object) => selectedIds.includes(object.id)),
+        group,
+        nextGroup,
+      )
+
+      return current.map((object) => {
+        if (!selectedIds.includes(object.id)) return object
+
+        const nextObject = scaled.find((item) => item.id === object.id) ?? object
+
+        if (changes.rotation !== undefined) nextObject.rotation = changes.rotation
+        if (changes.lockedProportions !== undefined) nextObject.lockedProportions = changes.lockedProportions
+        if (changes.operationName !== undefined) nextObject.operationName = changes.operationName
+        if (changes.operation !== undefined) nextObject.operation = changes.operation
+        if (changes.bitId !== undefined) nextObject.bitId = changes.bitId
+        if (changes.depth !== undefined) nextObject.depth = changes.depth
+
+        if (nextObject.lockedProportions) {
+          const aspectRatio = nextObject.width > 0 && nextObject.height > 0
+            ? nextObject.width / nextObject.height
+            : object.viewBoxWidth / object.viewBoxHeight
+          if (changes.width !== undefined) {
+            nextObject.height = nextObject.width / aspectRatio
+          } else if (changes.height !== undefined) {
+            nextObject.width = nextObject.height * aspectRatio
+          }
+        }
+
+        return nextObject
+      })
+    })
   }
 
   const importFiles = (event: ChangeEvent<HTMLInputElement>) => {
@@ -48,7 +95,7 @@ function App() {
       reader.onload = () => {
         const imported = createImportedObjects(extractPathSvgs(String(reader.result)), file.name, stock.depth)
         setObjects((current) => [...current, ...imported])
-        setSelectedId(imported[imported.length - 1]?.id ?? null)
+        setSelectedIds(imported.map((object) => object.id))
       }
       reader.readAsText(file)
     })
@@ -56,9 +103,9 @@ function App() {
   }
 
   const deleteSelected = () => {
-    if (selectedId === null) return
-    setObjects((current) => current.filter((object) => object.id !== selectedId))
-    setSelectedId(null)
+    if (selectedIds.length === 0) return
+    setObjects((current) => current.filter((object) => !selectedIds.includes(object.id)))
+    setSelectedIds([])
   }
 
   const updateStock = (changes: Partial<Stock>) => {
@@ -74,8 +121,48 @@ function App() {
     updateStock({ width, height })
   }
 
-  const handleMove = (id: number, point: Point) => updateObject(id, point)
-  const handleResize = (id: number, changes: Pick<SvgObject, 'width' | 'height' | 'x' | 'y'>) => updateObject(id, changes)
+  const handleMove = (ids: number[], delta: Point, startPositions?: Record<number, Point>) => {
+    setObjects((current) => current.map((object) => {
+      if (!ids.includes(object.id)) return object
+
+      const start = startPositions?.[object.id] ?? { x: object.x, y: object.y }
+      return {
+        ...object,
+        x: start.x + delta.x,
+        y: start.y + delta.y,
+      }
+    }))
+  }
+
+  const handleResize = (
+    ids: number[],
+    changes: Pick<SvgObject, 'width' | 'height' | 'x' | 'y'>,
+    startBounds?: { x: number, y: number, width: number, height: number },
+    startSelection?: SvgObject[],
+  ) => {
+    if (ids.length === 1) {
+      updateObject(ids[0], changes)
+      return
+    }
+
+    // If resizing multiple objects, we need to calculate the new bounds of the group and 
+    // scale each object accordingly
+
+    const selection = startSelection ?? objects.filter((object) => ids.includes(object.id))
+    const sourceBounds = startBounds ?? getSelectionBounds(selection)
+    const nextBounds = {
+      x: changes.x ?? sourceBounds.x,
+      y: changes.y ?? sourceBounds.y,
+      width: changes.width ?? sourceBounds.width,
+      height: changes.height ?? sourceBounds.height,
+    }
+
+    const resized = scaleSelectionToBounds(selection, sourceBounds, nextBounds)
+    setObjects((current) => current.map((object) => {
+      const match = resized.find((item) => item.id === object.id)
+      return match && ids.includes(object.id) ? match : object
+    }))
+  }
   const downloadGcode = async () => {
     if (objects.length === 0) return
     const blob = await createGcodeZip(objects, stock)
@@ -91,9 +178,23 @@ function App() {
     <main className="app-shell">
       <Header onGenerateGCode={downloadGcode} />
       <div className="workspace">
-        <LeftSidebar objects={objects} stock={stock} fileInput={fileInput} onImport={importFiles} onSelect={setSelectedId} onStockChange={updateStock} onStockPreset={updateStockPreset} selectedId={selectedId} />
-        <Canvas objects={objects} selectedId={selectedId} stock={stock} zoom={zoom} onZoomChange={setZoom} onSelect={setSelectedId} onMove={handleMove} onResize={handleResize} />
-        <RightSidebar selected={selected} stock={stock} onDelete={deleteSelected} onUpdate={updateSelected} />
+        <LeftSidebar objects={objects} stock={stock} fileInput={fileInput} onImport={importFiles} onSelect={(id, additive) => {
+          setSelectedIds((current) => {
+            if (additive) {
+              return current.includes(id) ? current.filter((value) => value !== id) : [...current, id]
+            }
+            return [id]
+          })
+        }} onStockChange={updateStock} onStockPreset={updateStockPreset} selectedIds={selectedIds} />
+        <Canvas objects={objects} selectedIds={selectedIds} stock={stock} zoom={zoom} onZoomChange={setZoom} onSelect={(id, additive) => {
+          setSelectedIds((current) => {
+            if (additive) {
+              return current.includes(id) ? current.filter((value) => value !== id) : [...current, id]
+            }
+            return [id]
+          })
+        }} onMove={handleMove} onResize={handleResize} />
+        <RightSidebar selectedObjects={selectedObjects} stock={stock} onDelete={deleteSelected} onUpdate={updateSelected} />
       </div>
     </main>
   )
