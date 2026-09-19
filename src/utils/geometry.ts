@@ -45,3 +45,27 @@ export const scaleSelectionToBounds = (items: SvgObject[], from: Bounds, to: Bou
     }
   })
 }
+
+export const rotateSelectionAroundPoint = (items: SvgObject[], center: { x: number, y: number }, angleDegrees: number): SvgObject[] => {
+
+  const angle = angleDegrees * Math.PI / 180
+  const cos = Math.cos(angle)
+  const sin = Math.sin(angle)
+
+  return items.map((item) => {
+    const itemCenter = { x: item.x + item.width / 2, y: item.y + item.height / 2 }
+    const offsetX = itemCenter.x - center.x
+    const offsetY = itemCenter.y - center.y
+    const rotatedCenter = {
+      x: center.x + offsetX * cos - offsetY * sin,
+      y: center.y + offsetX * sin + offsetY * cos,
+    }
+
+    return {
+      ...item,
+      x: rotatedCenter.x - item.width / 2,
+      y: rotatedCenter.y - item.height / 2,
+      rotation: item.rotation + angleDegrees,
+    }
+  })
+}

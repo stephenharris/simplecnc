@@ -130,7 +130,7 @@ export function Canvas({ objects, selectedIds, stock, zoom, onZoomChange, onSele
                   onSelect(object.id, additive)
                   beginDrag(event, object)
                 }}
-                style={{ left: `${object.x / stock.width * 100}%`, bottom: `${object.y / stock.height * 100}%`, width: `${object.width / stock.width * 100}%`, height: `${object.height / stock.height * 100}%`, transform: `rotate(${object.rotation}deg)` }}
+                style={{ left: `${object.x / stock.width * 100}%`, bottom: `${object.y / stock.height * 100}%`, width: `${object.width / stock.width * 100}%`, height: `${object.height / stock.height * 100}%`, transform: `rotate(${-object.rotation}deg)` }}
               >
                 <img
                   src={object.src}

@@ -6,7 +6,7 @@ import { Header } from './components/Header'
 import { LeftSidebar } from './components/LeftSidebar'
 import { RightSidebar } from './components/RightSidebar'
 import { createGcodeZip } from './gcode/generator'
-import { getSelectionBounds, scaleSelectionToBounds } from './utils/geometry'
+import { getSelectionBounds, rotateSelectionAroundPoint, scaleSelectionToBounds } from './utils/geometry'
 import { createImportedObjects, extractPathSvgs } from './utils/svg'
 import type { Point, Stock, SvgObject } from './types/cnc'
 
@@ -55,18 +55,23 @@ function App() {
     }
 
     setObjects((current) => {
-      const scaled = scaleSelectionToBounds(
+      let transformed = scaleSelectionToBounds(
         current.filter((object) => selectedIds.includes(object.id)),
         group,
         nextGroup,
       )
 
+      if (changes.rotation !== undefined) {
+        const rotationDelta = changes.rotation - selectedObjects[0].rotation
+        const center = { x: group.x + group.width / 2, y: group.y + group.height / 2 }
+        transformed = rotateSelectionAroundPoint(transformed, center, rotationDelta)
+      }
+
       return current.map((object) => {
         if (!selectedIds.includes(object.id)) return object
 
-        const nextObject = scaled.find((item) => item.id === object.id) ?? object
+        const nextObject = transformed.find((item) => item.id === object.id) ?? object
 
-        if (changes.rotation !== undefined) nextObject.rotation = changes.rotation
         if (changes.lockedProportions !== undefined) nextObject.lockedProportions = changes.lockedProportions
         if (changes.operationName !== undefined) nextObject.operationName = changes.operationName
         if (changes.operation !== undefined) nextObject.operation = changes.operation

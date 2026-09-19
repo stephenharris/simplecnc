@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getSelectionBounds, scaleSelectionToBounds } from './geometry'
+import { getSelectionBounds, rotateSelectionAroundPoint, scaleSelectionToBounds } from './geometry'
 import type { SvgObject } from '../types/cnc'
 
 const makeObject = (id: number, x: number, y: number, width: number, height: number): SvgObject => ({
@@ -44,5 +44,24 @@ describe('geometry helpers', () => {
     expect(scaled[1].y).toBeCloseTo(80)
     expect(scaled[1].width).toBeCloseTo(40)
     expect(scaled[1].height).toBeCloseTo(20)
+  })
+
+  it('rotates object centers around the center of the selection', () => {
+    const objects = [
+      makeObject(1, 0, 0, 10, 10),
+      makeObject(2, 40, 0, 10, 10),
+    ]
+    objects[0].rotation = 10
+    objects[1].rotation = 30
+    const center = { x: 25, y: 5 }
+
+    const rotated = rotateSelectionAroundPoint(objects, center, 90)
+
+    expect(rotated[0].x).toBeCloseTo(20)
+    expect(rotated[0].y).toBeCloseTo(-20)
+    expect(rotated[0].rotation).toBeCloseTo(100)
+    expect(rotated[1].x).toBeCloseTo(20)
+    expect(rotated[1].y).toBeCloseTo(20)
+    expect(rotated[1].rotation).toBeCloseTo(120)
   })
 })
