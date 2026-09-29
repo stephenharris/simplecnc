@@ -6,7 +6,7 @@ import { Header } from './components/Header'
 import { LeftSidebar } from './components/LeftSidebar'
 import { RightSidebar } from './components/RightSidebar'
 import { createGcodeZip } from './gcode/generator'
-import { getSelectionBounds, rotateSelectionAroundPoint, scaleSelectionToBounds } from './utils/geometry'
+import { AxisAlignedBoundingBox, getSelectionBounds, rotateSelectionAroundPoint, scaleSelectionToBounds } from './utils/geometry'
 import { createImportedObjects, extractPathSvgs } from './utils/svg'
 import type { Point, Stock, SvgObject } from './types/cnc'
 
@@ -41,29 +41,24 @@ function App() {
 
   const updateSelected = (changes: Partial<SvgObject>) => {
     if (selectedIds.length === 0) return
-    if (selectedIds.length === 1) {
-      updateObject(selectedIds[0], changes)
-      return
-    }
 
-    const group = getSelectionBounds(selectedObjects)
-    const nextGroup = {
-      x: changes.x ?? group.x,
-      y: changes.y ?? group.y,
-      width: changes.width ?? group.width,
-      height: changes.height ?? group.height,
-    }
+    let axisAlignedBoundingBox = new AxisAlignedBoundingBox(selectedObjects);
 
     setObjects((current) => {
-      let transformed = scaleSelectionToBounds(
-        current.filter((object) => selectedIds.includes(object.id)),
-        group,
-        nextGroup,
-      )
+
+      let transformed = axisAlignedBoundingBox.transform({
+        x: changes?.x,
+        y: changes?.y,
+        width: changes?.width,
+        height: changes?.height,
+      })
 
       if (changes.rotation !== undefined) {
         const rotationDelta = changes.rotation - selectedObjects[0].rotation
-        const center = { x: group.x + group.width / 2, y: group.y + group.height / 2 }
+        const center = { 
+          x: axisAlignedBoundingBox.getMinX() + axisAlignedBoundingBox.getWidth() / 2, 
+          y: axisAlignedBoundingBox.getMinY() + axisAlignedBoundingBox.getHeight() / 2 
+        }
         transformed = rotateSelectionAroundPoint(transformed, center, rotationDelta)
       }
 

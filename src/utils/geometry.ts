@@ -7,6 +7,104 @@ export type Bounds = {
   height: number
 }
 
+export class AxisAlignedBoundingBox {
+  protected objects: SvgObject[]
+  protected minX: number = Infinity;
+  protected maxX: number = -Infinity;
+  protected minY: number = Infinity;
+  protected maxY: number = -Infinity;
+  protected width: number = 0;
+  protected height: number = 0;
+
+
+  constructor(objects: SvgObject[]) {
+    this.objects = objects;
+    this.computeBoundingBox();
+  }
+
+  // Computes the axis-aligned bounding box of the current objects, taking into account their rotation.
+  private computeBoundingBox() {
+    
+    let boundingBox = this.objects.reduce((acc, object) => {
+      const angle = object.rotation * Math.PI / 180
+      const cos = Math.cos(angle);
+      const sin = Math.sin(angle);
+
+
+      const boundingWidth = Math.abs(object.width * cos) + Math.abs(object.height * sin);
+      const boundingHeight = Math.abs(object.width * sin) + Math.abs(object.height * cos);
+
+      acc.minX = Math.min(acc.minX, object.x + object.width / 2 - boundingWidth / 2)
+      acc.minY = Math.min(acc.minY, object.y + object.height / 2 - boundingHeight / 2)
+      acc.maxX = Math.max(acc.maxX, object.x + object.width / 2 - boundingWidth / 2 + boundingWidth)
+      acc.maxY = Math.max(acc.maxY, object.y + object.height / 2 - boundingHeight / 2 + boundingHeight)
+
+      return acc
+
+    }, { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity });
+    
+    this.minX = boundingBox.minX 
+    this.maxX = boundingBox.maxX
+    this.minY = boundingBox.minY
+    this.maxY = boundingBox.maxY
+    this.width = this.maxX - this.minX
+    this.height =  this.maxY - this.minY
+  }
+
+  // Applies the given changes to the bounding box and scales/translates the objects accordingly.
+  // And returns the modified objects.
+  transform(changes: Partial<SvgObject>): SvgObject[] {
+
+    const to = {
+      x: changes.x ?? this.getMinX(),
+      y: changes.y ?? this.getMinY(),
+      width: changes.width ?? this.getWidth(),
+      height: changes.height ?? this.getHeight(),
+    }
+
+      
+    this.objects = this.objects.map((object) => {
+      const relativeX = object.x - this.minX
+      const relativeY = object.y - this.minY
+
+      const scaleX = this.width > 0 ? to.width / this.width : 1
+      let scaleY = this.height > 0 ? to.height / this.height : 1
+      if(object.lockedProportions) {
+        scaleY = scaleX;
+      }
+
+      object.x = to.x + relativeX * scaleX
+      object.y = to.y + relativeY * scaleY
+      object.width = object.width * scaleX
+      object.height = object.height * scaleY
+
+      return object;
+    });
+
+    this.computeBoundingBox();
+
+    return this.objects
+  }
+
+  getWidth(): number {
+    return this.width
+  }
+
+  getHeight(): number {
+    return this.height
+  }
+
+  getMinX(): number {
+    return this.minX
+  }
+
+  getMinY(): number {
+    return this.minY
+  }
+
+}
+
+
 export const getSelectionBounds = (items: SvgObject[]): Bounds => {
   if (items.length === 0) return { x: 0, y: 0, width: 0, height: 0 }
 

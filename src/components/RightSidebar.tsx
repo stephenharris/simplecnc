@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { CutOperation, Stock, SvgObject } from '../types/cnc'
+import {AxisAlignedBoundingBox} from '../utils/geometry'
 import bits from '../data/bits.json'
 import './RightSidebar.css'
 
@@ -20,14 +21,7 @@ type RightSidebarProps = {
 export function RightSidebar({ selectedObjects, stock, onDelete, onUpdate }: RightSidebarProps) {
   const [activeTab, setActiveTab] = useState<'transform' | 'cut'>('transform')
   const selected = selectedObjects[0]
-  const selectionBounds = selectedObjects.length > 0 ? {
-    x: Math.min(...selectedObjects.map((object) => object.x)),
-    y: Math.min(...selectedObjects.map((object) => object.y)),
-    width: Math.max(...selectedObjects.map((object) => object.x + object.width)) - Math.min(...selectedObjects.map((object) => object.x)),
-    height: Math.max(...selectedObjects.map((object) => object.y + object.height)) - Math.min(...selectedObjects.map((object) => object.y)),
-  } : null
-
-  const transformTarget = selectedObjects.length > 1 ? selectionBounds : selected ? { x: selected.x, y: selected.y, width: selected.width, height: selected.height } : null
+  let axisAlignedBoundingBox = new AxisAlignedBoundingBox(selectedObjects);
 
   return (
     <aside className="sidebar inspector">
@@ -62,15 +56,15 @@ export function RightSidebar({ selectedObjects, stock, onDelete, onUpdate }: Rig
               <div className="inspector-section">
                 <div className="section-title">POSITION <span>MM</span></div>
                 <div className="field-grid">
-                  <label>X<input type="number" value={transformTarget ? Math.round(transformTarget.x) : 0} onChange={(event) => onUpdate({ x: Number(event.target.value) })} /></label>
-                  <label>Y<input type="number" value={transformTarget ? Math.round(transformTarget.y) : 0} onChange={(event) => onUpdate({ y: Number(event.target.value) })} /></label>
+                  <label>X<input type="number" value={axisAlignedBoundingBox ? Math.round(axisAlignedBoundingBox.getMinX()) : 0} onChange={(event) => onUpdate({x: Number(event.target.value)})} /></label>
+                  <label>Y<input type="number" value={axisAlignedBoundingBox ? Math.round(axisAlignedBoundingBox.getMinY()) : 0} onChange={(event) => onUpdate({y: Number(event.target.value)})} /></label>
                 </div>
               </div>
               <div className="inspector-section">
                 <div className="section-title">SIZE <span>MM</span></div>
                 <div className="field-grid">
-                  <label>Width<input type="number" min="12" step="0.1" value={transformTarget ? transformTarget.width : 0} onChange={(event) => onUpdate({ width: Number(event.target.value) })} /></label>
-                  <label>Height<input type="number" min="12" step="0.1" value={transformTarget ? transformTarget.height : 0} onChange={(event) => onUpdate({ height: Number(event.target.value) })} /></label>
+                  <label>Width<input type="number" min="12" step="0.1" value={axisAlignedBoundingBox ? axisAlignedBoundingBox.getWidth() : 0} onChange={(event) => onUpdate({ width: Number(event.target.value) })} /></label>
+                  <label>Height<input type="number" min="12" step="0.1" value={axisAlignedBoundingBox ? axisAlignedBoundingBox.getHeight() : 0} onChange={(event) => onUpdate({ height: Number(event.target.value) })} /></label>
                 </div>
                 {selected && <label className="toggle-row"><span>Lock proportions</span><input type="checkbox" checked={selected.lockedProportions} onChange={(event) => onUpdate({ lockedProportions: event.target.checked })} /><i /></label>}
               </div>
