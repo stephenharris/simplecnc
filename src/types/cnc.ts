@@ -21,6 +21,7 @@ export type SvgObject = {
   bitId: string
   depth: number
   lockedProportions: boolean
+  svg: string
 }
 
 export type Stock = {

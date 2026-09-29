@@ -27,12 +27,14 @@ export const extractPathSvgs = (svg: string) => {
 
   // Build a string of all relevant attributes on the root SVG element to preserve in each extracted path SVG.
   // Do not include width/height attributes, as this will be determined by the path.
-  const attributes = ['viewBox', 'fill', 'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin', 'fill-rule', 'clip-rule']
+  const attributes = ['viewBox', 'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin', 'fill-rule', 'clip-rule']
     .map((name) => root.getAttribute(name) ? ` ${name}="${root.getAttribute(name)}"` : '')
     .join('')
   const serializer = new XMLSerializer()
   return paths.map((path) => {
     const cleanPath = path.cloneNode(true) as Element
+    cleanPath.setAttribute('fill', 'currentColor');
+    cleanPath.setAttribute('style', 'stroke: #000000;stroke-width: 1;');
     Array.from(cleanPath.attributes).filter((attribute) => attribute.name.includes(':')).forEach((attribute) => cleanPath.removeAttribute(attribute.name))
     let content = serializer.serializeToString(cleanPath)
     let parent = path.parentElement
@@ -148,6 +150,7 @@ export const createImportedObjects = (pathSvgs: string[], fileName: string, stoc
     name: `${fileName} / path ${index + 1}`,
     operationName: `${fileName} path ${index + 1}`,
     src: URL.createObjectURL(new Blob([normalizedSvg], { type: 'image/svg+xml' })),
+    svg: normalizedSvg,
     pathData: localPathData,
     viewBoxWidth: defaultViewBox.width,
     viewBoxHeight: defaultViewBox.height,
