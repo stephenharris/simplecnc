@@ -21,7 +21,9 @@ export abstract class GcodeOperation {
   }
 
   protected addDepthPass(lines: string[], depth: number) {
-    const contours = this.pathFlattener.flatten(this.object.pathData).map((contour) => contour.map((point) => toMachinePoint(point, this.object)))
+    const contours = this.pathFlattener
+      .flatten(this.object.pathData)
+      .map((contour) => contour.map((point) => toMachinePoint(point, this.object)))
     writeToolpath(lines, this.object, depth, this.adjustContours(contours))
   }
 

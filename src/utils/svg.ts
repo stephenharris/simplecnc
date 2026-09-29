@@ -122,7 +122,14 @@ const readImportMetadata = (svg: string, name: string) => svg.match(new RegExp(`
 const getImportedGeometry = (svg: string) => {
   const bounds = readImportMetadata(svg, 'data-path-bounds')
   const parent = readImportMetadata(svg, 'data-parent-viewbox')
-  if (!bounds || bounds.length !== 4 || !parent || parent.length !== 4 || parent[2] <= 0) return { ...getSvgSize(svg), x: 0, y: 0 }
+  if (!bounds || bounds.length !== 4 || !parent || parent.length !== 4 || parent[2] <= 0) {
+    let svgSize = getSvgSize(svg)
+    return { 
+      ...svgSize, 
+      x: 0, 
+      y: 0,
+    }
+  } 
   const scale = 100 / parent[2]
   return {
     width: Math.max(0.001, bounds[2] * scale),
