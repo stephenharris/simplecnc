@@ -46,7 +46,7 @@ export const extractPathSvgs = (svg: string) => {
     const bounds = getPathBounds(content, rootViewBox, rootSize)
     const pathBounds = `${bounds.x} ${bounds.y} ${bounds.width} ${bounds.height}`
     const metadata = ` data-parent-viewbox="${rootSize.x} ${rootSize.y} ${rootSize.width} ${rootSize.height}" data-path-bounds="${pathBounds}"`
-    return `<svg xmlns="http://www.w3.org/2000/svg"${attributes}${metadata}>${content}</svg>`
+    return `<svg xmlns="http://www.w3.org/2000/svg"${attributes}${metadata} preserveAspectRatio="none">${content}</svg>`
   })
 }
 
