@@ -123,6 +123,12 @@
 }
 
 .canvas-object.active {
+  outline: 1px dashed #d77941;
+  outline-offset: 5px;
+}
+
+.axis-aligned-selection-box {
+  position:absolute;
   outline: 1px solid #d77941;
   outline-offset: 5px;
 }

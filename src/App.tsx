@@ -6,7 +6,7 @@ import { Header } from './components/Header'
 import { LeftSidebar } from './components/LeftSidebar'
 import { RightSidebar } from './components/RightSidebar'
 import { createGcodeZip } from './gcode/generator'
-import { AxisAlignedBoundingBox, getSelectionBounds, rotateSelectionAroundPoint, scaleSelectionToBounds } from './utils/geometry'
+import { AxisAlignedBoundingBox, rotateSelectionAroundPoint } from './utils/geometry'
 import { createImportedObjects, extractPathSvgs } from './utils/svg'
 import type { Point, Stock, SvgObject } from './types/cnc'
 
@@ -134,35 +134,6 @@ function App() {
     }))
   }
 
-  const handleResize = (
-    ids: number[],
-    changes: Pick<SvgObject, 'width' | 'height' | 'x' | 'y'>,
-    startBounds?: { x: number, y: number, width: number, height: number },
-    startSelection?: SvgObject[],
-  ) => {
-    if (ids.length === 1) {
-      updateObject(ids[0], changes)
-      return
-    }
-
-    // If resizing multiple objects, we need to calculate the new bounds of the group and 
-    // scale each object accordingly
-
-    const selection = startSelection ?? objects.filter((object) => ids.includes(object.id))
-    const sourceBounds = startBounds ?? getSelectionBounds(selection)
-    const nextBounds = {
-      x: changes.x ?? sourceBounds.x,
-      y: changes.y ?? sourceBounds.y,
-      width: changes.width ?? sourceBounds.width,
-      height: changes.height ?? sourceBounds.height,
-    }
-
-    const resized = scaleSelectionToBounds(selection, sourceBounds, nextBounds)
-    setObjects((current) => current.map((object) => {
-      const match = resized.find((item) => item.id === object.id)
-      return match && ids.includes(object.id) ? match : object
-    }))
-  }
   const downloadGcode = async () => {
     if (objects.length === 0) return
     const blob = await createGcodeZip(objects, stock)
@@ -186,14 +157,14 @@ function App() {
             return [id]
           })
         }} onStockChange={updateStock} onStockPreset={updateStockPreset} selectedIds={selectedIds} />
-        <Canvas objects={objects} selectedIds={selectedIds} stock={stock} zoom={zoom} onZoomChange={setZoom} onSelect={(id, additive) => {
+        <Canvas objects={objects} selectedIds={selectedIds} stock={stock} zoom={zoom} onZoomChange={setZoom} onUpdate={updateSelected} onSelect={(id, additive) => {
           setSelectedIds((current) => {
             if (additive) {
               return current.includes(id) ? current.filter((value) => value !== id) : [...current, id]
             }
             return [id]
           })
-        }} onMove={handleMove} onResize={handleResize} />
+        }} onMove={handleMove}/>
         <RightSidebar selectedObjects={selectedObjects} stock={stock} onDelete={deleteSelected} onUpdate={updateSelected} />
       </div>
     </main>
