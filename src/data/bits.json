@@ -1,24 +1,24 @@
 [
   {
-    "id": "2-flute-spiral-flat-nose-1-8",
+    "id": "1",
     "name": "2-Flute Spiral Flat Nose 1/8",
     "diameterMm": 3.175,
     "type": "End mill"
   },
   {
-    "id": "2-flute-end-mill-0-8",
+    "id": "2",
     "name": "2-Flute End Mill .8",
     "diameterMm": 0.8,
     "type": "End mill"
   },
   {
-    "id": "20-degree-v-bit-1-8",
+    "id": "3",
     "name": "20-degree V-bit",
     "diameterMm": 3.175,
     "type": "V-bit"
   },
   {
-    "id": "bowl-0-25r-0-75d-0-25s",
+    "id": "4",
     "name": "Bowl 0.25R 0.75D 0.25S",
     "diameterMm": 19.05,
     "type": "Bowl bit"

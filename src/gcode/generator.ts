@@ -17,9 +17,21 @@ export const generateGcode = (object: SvgObject, stock: Stock): string => {
   const bit = bits.find((candidate) => candidate.id === object.bitId)
   if (!bit) throw new Error(`No configured bit found for object "${object.name}"`)
   const toolDiameter = bit.diameterMm
-  const lines = [`; SimpleCNC / ${object.operationName}`, '; GRBL 1.1 / Z0 at material top / origin: bottom-left', `; Tool diameter: ${toolDiameter.toFixed(3)} mm`, `; Stepdown: ${DEFAULT_STEPDOWN.toFixed(2)} mm`, 'G21', 'G90', 'G17', 'G94', 'M5', `G0 Z${DEFAULT_SAFE_Z.toFixed(3)}`]
+  const lines = [
+    `; SimpleCNC / ${object.operationName}`, 
+    '; GRBL 1.1 / Z0 at material top / origin: bottom-left', 
+    `; Stepdown: ${DEFAULT_STEPDOWN.toFixed(2)} mm`, 
+    'G21', 
+    'G90', 
+    'G17', 
+    'G94', 
+    `; Tool: ${bit.name}`, 
+    `; Tool diameter: ${toolDiameter.toFixed(3)} mm`, 
+    `T${object.bitId} M6`,
+    `G0 Z${DEFAULT_SAFE_Z.toFixed(3)}`
+  ]
   createOperation(object, toolDiameter).generateDepthPasses(lines, stock)
-  lines.push(`G0 Z${DEFAULT_SAFE_Z.toFixed(3)}`, 'M5', 'G0 X0 Y0', 'M2')
+  lines.push(`G0 Z${DEFAULT_SAFE_Z.toFixed(3)}`, 'G0 X0 Y0', 'M2')
   return `${lines.join('\n')}\n`
 }
 

@@ -20,7 +20,7 @@ const makeObject = (overrides: Partial<SvgObject> = {}): SvgObject => ({
   y: 30,
   rotation: 0,
   operation: 'cut-on-path',
-  bitId: '2-flute-spiral-flat-nose-1-8',
+  bitId: '1',
   depth: 1.2,
   lockedProportions: true,
   svg: '',
