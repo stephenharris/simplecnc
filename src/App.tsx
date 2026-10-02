@@ -18,27 +18,6 @@ function App() {
   const fileInput = useRef<HTMLInputElement>(null)
   const selectedObjects = objects.filter((object) => selectedIds.includes(object.id))
 
-  const updateObject = (id: number, changes: Partial<SvgObject>) => {
-    setObjects((current) => current.map((object) => {
-      if (object.id !== id) return object
-
-      const nextChanges = { ...changes }
-
-      if (object.lockedProportions) {
-        const aspectRatio = object.width > 0 && object.height > 0
-          ? object.width / object.height
-          : object.viewBoxWidth / object.viewBoxHeight
-        if (nextChanges.width !== undefined) {
-          nextChanges.height = nextChanges.width / aspectRatio
-        } else if (nextChanges.height !== undefined) {
-          nextChanges.width = nextChanges.height * aspectRatio
-        }
-      }
-
-      return { ...object, ...nextChanges }
-    }))
-  }
-
   const updateSelected = (changes: Partial<SvgObject>) => {
     if (selectedIds.length === 0) return
 
