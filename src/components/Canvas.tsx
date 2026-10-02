@@ -2,6 +2,7 @@ import type { PointerEvent } from 'react'
 import type { Point, Stock, SvgObject } from '../types/cnc'
 import './Canvas.css'
 import { AxisAlignedBoundingBox } from '../utils/geometry'
+import { getDepthColor } from '../utils/color'
 
 type CanvasProps = {
   objects: SvgObject[]
@@ -145,7 +146,13 @@ export function Canvas({ objects, selectedIds, stock, zoom, onZoomChange, onSele
                   onSelect(object.id, additive)
                   beginDrag(event, object)
                 }}
-                style={{ left: `${object.x / stock.width * 100}%`, bottom: `${object.y / stock.height * 100}%`, width: `${object.width / stock.width * 100}%`, height: `${object.height / stock.height * 100}%`, transform: `rotate(${-object.rotation}deg)`,
+                style={{ 
+                  color: object.operation === 'pocket' ? getDepthColor(object.depth, stock.depth) : 'transparent',
+                  left: `${object.x / stock.width * 100}%`, 
+                  bottom: `${object.y / stock.height * 100}%`, 
+                  width: `${object.width / stock.width * 100}%`, 
+                  height: `${object.height / stock.height * 100}%`, 
+                  transform: `rotate(${-object.rotation}deg)`,
                }}
               >
                 <div
