@@ -1,4 +1,4 @@
-import type { PointerEvent } from 'react'
+import { useRef, type PointerEvent } from 'react'
 import type { Point, Stock, SvgObject } from '../types/cnc'
 import './Canvas.css'
 import { AxisAlignedBoundingBox } from '../utils/geometry'
@@ -22,10 +22,12 @@ export function Canvas({ objects, selectedIds, stock, zoom, onZoomChange, onSele
   const selectedObjects = objects.filter((item) => selectedIds.includes(item.id))
   const axisAlignedBox = new AxisAlignedBoundingBox(selectedObjects);
   const lockedProportions = selectedObjects.some((item) => item.lockedProportions);
+  const hasDragged = useRef(false)
 
 
   const beginDrag = (event: PointerEvent<HTMLDivElement>, object: SvgObject) => {
     event.currentTarget.setPointerCapture(event.pointerId)
+    hasDragged.current = false
     const startX = event.clientX
     const startY = event.clientY
     const rect = event.currentTarget.parentElement?.getBoundingClientRect()
@@ -41,6 +43,9 @@ export function Canvas({ objects, selectedIds, stock, zoom, onZoomChange, onSele
       hasMoved = true
       const deltaX = ((moveEvent.clientX - startX) / rect.width) * stock.width
       const deltaY = ((moveEvent.clientY - startY) / rect.height) * stock.height
+      if (Math.hypot(moveEvent.clientX - startX, moveEvent.clientY - startY) > 3) {
+        hasDragged.current = true
+      }
       onMove(ids, { x: deltaX, y: -deltaY }, startPositions)
     }
     const end = () => {
@@ -150,8 +155,15 @@ export function Canvas({ objects, selectedIds, stock, zoom, onZoomChange, onSele
                 className={`canvas-object ${selectedIds.includes(object.id) ? 'active' : ''}`}
                 onPointerDown={(event) => {
                   const additive = event.shiftKey || event.metaKey || event.ctrlKey
-                  onSelect(object.id, additive)
+                  console.log('onPointerDown', object.id, additive, 'beginDrag');
+                  //onSelect(object.id, additive)
                   beginDrag(event, object)
+                }}
+                onPointerUp={(event) => {
+                  if (!hasDragged.current) {
+                    const additive = event.shiftKey || event.metaKey || event.ctrlKey
+                    onSelect(object.id, additive)
+                  }
                 }}
                 style={{ 
                   color: object.operation === 'pocket' ? getDepthColor(object.depth, stock.depth) : 'transparent',
