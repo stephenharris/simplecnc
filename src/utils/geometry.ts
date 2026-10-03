@@ -58,19 +58,23 @@ export class AxisAlignedBoundingBox {
     const to = {
       x: changes.x ?? this.getMinX(),
       y: changes.y ?? this.getMinY(),
-      width: changes.width ?? this.getWidth(),
-      height: changes.height ?? this.getHeight(),
+      width: changes.width,
+      height: changes.height,
     }
 
+    const lockedProportions = this.objects.some((item) => item.lockedProportions);
       
     this.objects = this.objects.map((object) => {
       const relativeX = object.x - this.minX
       const relativeY = object.y - this.minY
 
-      const scaleX = this.width > 0 ? to.width / this.width : 1
-      let scaleY = this.height > 0 ? to.height / this.height : 1
-      if(object.lockedProportions) {
+      let scaleX = this.width > 0 && changes.width ? changes.width / this.width : 1
+      let scaleY = this.height > 0  && changes.height ? changes.height / this.height : 1
+
+      if(changes.width && lockedProportions) {
         scaleY = scaleX;
+      } else if(changes.height && lockedProportions) {
+        scaleX = scaleY;
       }
 
       object.x = to.x + relativeX * scaleX

@@ -81,4 +81,61 @@ describe('geometry helpers', () => {
     expect(rotated[1].y).toBeCloseTo(20)
     expect(rotated[1].rotation).toBeCloseTo(120)
   })
+
+  it('resepects locked proportions when resizing width', () => {
+    const objects = [
+      makeObject(1, 10, 20, 10, 20),
+      makeObject(2, 30, 40, 10, 10),
+    ]
+    objects[0].lockedProportions = true 
+
+    const box = new AxisAlignedBoundingBox(objects)
+    box.transform({ width: 60 })
+
+    expect(box.getMinX()).toBe(10)
+    expect(box.getMinY()).toBe(20)
+    expect(box.getWidth()).toBe(60)
+    expect(box.getHeight()).toBe(60)
+  })
+
+  it('resepects locked proportions when resizing height', () => {
+    const objects = [
+      makeObject(1, 10, 20, 10, 20),
+      makeObject(2, 30, 40, 10, 10),
+    ]
+    objects[0].lockedProportions = true 
+
+    const box = new AxisAlignedBoundingBox(objects)
+    box.transform({ height: 15 })
+
+    expect(box.getMinX()).toBe(10)
+    expect(box.getMinY()).toBe(20)
+    expect(box.getWidth()).toBe(15)
+    expect(box.getHeight()).toBe(15)
+  })
+
+  it('locked proportions maintains aspect ratio when resizing both width and height', () => {
+    const objects = [
+      makeObject(1, 10, 20, 10, 20),
+      makeObject(2, 30, 40, 10, 10),
+    ]
+    // locked proportion applies to all objects in the selection if at least one object has it enabled.
+    objects[0].lockedProportions = true 
+
+    const box = new AxisAlignedBoundingBox(objects)
+    const transformed = box.transform({ width: 60, height: 15 })
+
+    expect(box.getMinX()).toBe(10)
+    expect(box.getMinY()).toBe(20)
+    expect(box.getWidth()).toBe(60)
+    // The width change takes precedence over the height change,
+    // so the height is adjusted to maintain aspect ratio.
+    expect(box.getHeight()).toBe(60)
+
+    // Both objects have doubled in size, and maintain their aspect ratios.
+    expect(transformed[0].width).toBe(20)
+    expect(transformed[0].height).toBe(40)
+    expect(transformed[1].width).toBe(20)
+    expect(transformed[1].height).toBe(20)
+  })
 })
