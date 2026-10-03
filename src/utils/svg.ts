@@ -139,6 +139,8 @@ const getImportedGeometry = (svg: string) => {
   }
 }
 
+const svgToDataUri = (svg: string) => `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
+
 /** Builds the initial editable object state for each imported standalone path. */
 export const createImportedObjects = (pathSvgs: string[], fileName: string, stockDepth: number): SvgObject[] => pathSvgs.map((pathSvg, index) => {
   const pathBounds = readImportMetadata(pathSvg, 'data-path-bounds')
@@ -156,7 +158,7 @@ export const createImportedObjects = (pathSvgs: string[], fileName: string, stoc
     id: Date.now() + Math.random() + index,
     name: `${fileName} / path ${index + 1}`,
     operationName: `${fileName} path ${index + 1}`,
-    src: URL.createObjectURL(new Blob([normalizedSvg], { type: 'image/svg+xml' })),
+    src: svgToDataUri(normalizedSvg),
     svg: normalizedSvg,
     pathData: localPathData,
     viewBoxWidth: defaultViewBox.width,

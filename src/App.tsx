@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { ChangeEvent } from 'react'
 import './App.css'
 import { Canvas } from './components/Canvas'
@@ -7,16 +7,29 @@ import { LeftSidebar } from './components/LeftSidebar'
 import { RightSidebar } from './components/RightSidebar'
 import { createGcodeZip } from './gcode/generator'
 import { AxisAlignedBoundingBox, rotateSelectionAroundPoint } from './utils/geometry'
+import { clearProjectFromStorage, deserializeProject, loadProjectFromStorage, saveProjectToStorage, serializeProject } from './utils/project'
 import { createImportedObjects, extractPathSvgs } from './utils/svg'
 import type { Point, Stock, SvgObject } from './types/cnc'
 
 function App() {
-  const [objects, setObjects] = useState<SvgObject[]>([])
+  const defaultStock: Stock = { width: 400, height: 300, depth: 12 }
+  const storedProject = loadProjectFromStorage()
+  const [objects, setObjects] = useState<SvgObject[]>(storedProject?.objects ?? [])
   const [selectedIds, setSelectedIds] = useState<number[]>([])
-  const [stock, setStock] = useState<Stock>({ width: 400, height: 300, depth: 12 })
+  const [stock, setStock] = useState<Stock>(storedProject?.stock ?? defaultStock)
   const [zoom, setZoom] = useState(100)
   const fileInput = useRef<HTMLInputElement>(null)
+  const projectInput = useRef<HTMLInputElement>(null)
+  const hasHydratedProject = useRef(false)
   const selectedObjects = objects.filter((object) => selectedIds.includes(object.id))
+
+  useEffect(() => {
+    if (!hasHydratedProject.current) {
+      hasHydratedProject.current = true
+      return
+    }
+    saveProjectToStorage({ stock, objects })
+  }, [stock, objects])
 
   const updateSelected = (changes: Partial<SvgObject>) => {
     if (selectedIds.length === 0) return
@@ -81,6 +94,44 @@ function App() {
     event.target.value = ''
   }
 
+  const saveProject = () => {
+    const payload = serializeProject({ stock, objects })
+    const blob = new Blob([payload], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'simplecnc-project.json'
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const newProject = () => {
+    const emptyStock: Stock = { width: 400, height: 300, depth: 12 }
+    setObjects([])
+    setSelectedIds([])
+    setStock(emptyStock)
+    clearProjectFromStorage()
+  }
+
+  const importProject = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = () => {
+      try {
+        const importedProject = deserializeProject(String(reader.result))
+        setObjects(importedProject.objects)
+        setStock(importedProject.stock)
+        setSelectedIds([])
+      } catch (error) {
+        window.alert(error instanceof Error ? error.message : 'Could not import that SimpleCNC project file.')
+      }
+    }
+    reader.readAsText(file)
+    event.target.value = ''
+  }
+
   const deleteSelected = () => {
     if (selectedIds.length === 0) return
     setObjects((current) => current.filter((object) => !selectedIds.includes(object.id)))
@@ -126,7 +177,8 @@ function App() {
 
   return (
     <main className="app-shell">
-      <Header onGenerateGCode={downloadGcode} />
+      <Header onGenerateGCode={downloadGcode} onImportProject={() => projectInput.current?.click()} onNewProject={newProject} onSaveProject={saveProject} />
+      <input ref={projectInput} type="file" accept=".json,application/json" hidden onChange={importProject} />
       <div className="workspace">
         <LeftSidebar objects={objects} stock={stock} fileInput={fileInput} onImport={importFiles} onSelect={(id, additive) => {
           setSelectedIds((current) => {

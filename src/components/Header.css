@@ -9,6 +9,13 @@
   justify-content: space-between;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+}
+
 .brand {
   display: flex;
   align-items: center;
@@ -40,13 +47,22 @@
   color: #879897;
 }
 
+.secondary-button,
 .export-button {
   border: 0;
-  background: #d77941;
   color: #fff9ed;
   padding: 12px 17px;
   font-size: 12px;
   letter-spacing: .4px;
+  cursor: pointer;
+}
+
+.secondary-button {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.export-button {
+  background: #d77941;
 }
 
 .export-button span {
@@ -73,7 +89,9 @@
     gap: 14px;
   }
 
-  .export-button {
-    margin-left: auto;
+  .header-actions {
+    width: 100%;
+    justify-content: flex-end;
+    flex-wrap: wrap;
   }
 }
