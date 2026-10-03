@@ -5,9 +5,13 @@ type HeaderProps = {
   onSaveProject: () => void
   onImportProject: () => void
   onNewProject: () => void
+  onUndo: () => void
+  onRedo: () => void
+  canUndo: boolean
+  canRedo: boolean
 }
 
-export function Header({ onGenerateGCode, onSaveProject, onImportProject, onNewProject }: HeaderProps) {
+export function Header({ onGenerateGCode, onSaveProject, onImportProject, onNewProject, onUndo, onRedo, canUndo, canRedo }: HeaderProps) {
   return (
     <header className="topbar">
       <div className="brand">
@@ -18,6 +22,12 @@ export function Header({ onGenerateGCode, onSaveProject, onImportProject, onNewP
       </div>
 
       <div className="header-actions">
+        <button className="secondary-button" type="button" onClick={onUndo} disabled={!canUndo}>
+          Undo
+        </button>
+        <button className="secondary-button" type="button" onClick={onRedo} disabled={!canRedo}>
+          Redo
+        </button>
         <button className="secondary-button" type="button" onClick={onNewProject}>
           New project
         </button>

@@ -57,6 +57,12 @@
   cursor: pointer;
 }
 
+.secondary-button:disabled,
+.export-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .secondary-button {
   background: rgba(255, 255, 255, 0.08);
 }
