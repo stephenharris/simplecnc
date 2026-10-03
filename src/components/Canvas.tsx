@@ -11,11 +11,13 @@ type CanvasProps = {
   zoom: number
   onZoomChange: (zoom: number) => void
   onSelect: (id: number, additive: boolean) => void
+  onGestureStart: () => void
   onMove: (ids: number[], delta: Point, startPositions?: Record<number, Point>) => void
-  onUpdate: (changes: Partial<SvgObject>) => void
+  onGestureEnd: () => void
+  onUpdate: (changes: Partial<SvgObject>, live?: boolean) => void
 }
 
-export function Canvas({ objects, selectedIds, stock, zoom, onZoomChange, onSelect, onMove, onUpdate }: CanvasProps) {
+export function Canvas({ objects, selectedIds, stock, zoom, onZoomChange, onSelect, onGestureStart, onMove, onGestureEnd, onUpdate }: CanvasProps) {
 
   const selectedObjects = objects.filter((item) => selectedIds.includes(item.id))
   const axisAlignedBox = new AxisAlignedBoundingBox(selectedObjects);
@@ -32,7 +34,11 @@ export function Canvas({ objects, selectedIds, stock, zoom, onZoomChange, onSele
     const startPositions = Object.fromEntries(
       objects.filter((item) => ids.includes(item.id)).map((item) => [item.id, { x: item.x, y: item.y }]),
     ) as Record<number, Point>
+    onGestureStart()
+    let hasMoved = false
     const move = (moveEvent: globalThis.PointerEvent) => {
+      if (!hasMoved && Math.hypot(moveEvent.clientX - startX, moveEvent.clientY - startY) <= 3) return
+      hasMoved = true
       const deltaX = ((moveEvent.clientX - startX) / rect.width) * stock.width
       const deltaY = ((moveEvent.clientY - startY) / rect.height) * stock.height
       onMove(ids, { x: deltaX, y: -deltaY }, startPositions)
@@ -40,9 +46,12 @@ export function Canvas({ objects, selectedIds, stock, zoom, onZoomChange, onSele
     const end = () => {
       window.removeEventListener('pointermove', move)
       window.removeEventListener('pointerup', end)
+      window.removeEventListener('pointercancel', end)
+      onGestureEnd()
     }
     window.addEventListener('pointermove', move)
     window.addEventListener('pointerup', end)
+    window.addEventListener('pointercancel', end)
   }
 
   const beginResize = (event: PointerEvent<HTMLElement>, corner: string) => {
@@ -50,14 +59,9 @@ export function Canvas({ objects, selectedIds, stock, zoom, onZoomChange, onSele
     const startX = event.clientX
     const startY = event.clientY
     const stockDom = event.currentTarget.parentElement?.parentElement?.getBoundingClientRect()
-    console.log(event.currentTarget);
-    console.log(event.currentTarget.parentElement?.parentElement);
-    console.log(stockDom);
     if (!stockDom) return
+    onGestureStart()
 
-    console.log('stockDom', stockDom.width, stockDom.height);
-    console.log('stock', stock.width, stock.height);
-    
     const startBounds = {
       x: Number.isFinite(axisAlignedBox.getMinX()) ? axisAlignedBox.getMinX() : 0,
       y: Number.isFinite(axisAlignedBox.getMinY()) ? axisAlignedBox.getMinY() : 0,
@@ -92,14 +96,17 @@ export function Canvas({ objects, selectedIds, stock, zoom, onZoomChange, onSele
         y: nextY,
       }
       
-      onUpdate(changes)
+      onUpdate(changes, true)
     }
     const end = () => {
       window.removeEventListener('pointermove', move)
       window.removeEventListener('pointerup', end)
+      window.removeEventListener('pointercancel', end)
+      onGestureEnd()
     }
     window.addEventListener('pointermove', move)
     window.addEventListener('pointerup', end)
+    window.addEventListener('pointercancel', end)
   }
 
 

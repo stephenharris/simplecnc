@@ -8,19 +8,25 @@ import { RightSidebar } from './components/RightSidebar'
 import { createGcodeZip } from './gcode/generator'
 import { AxisAlignedBoundingBox, rotateSelectionAroundPoint } from './utils/geometry'
 import { clearProjectFromStorage, deserializeProject, loadProjectFromStorage, saveProjectToStorage, serializeProject } from './utils/project'
+import { cloneProjectSnapshot, commitHistory, createHistoryState, pushHistory, redoHistory, replacePresent, undoHistory } from './utils/history'
 import { createImportedObjects, extractPathSvgs } from './utils/svg'
 import type { Point, Stock, SvgObject } from './types/cnc'
+import type { ProjectSnapshot } from './utils/history'
 
 function App() {
   const defaultStock: Stock = { width: 400, height: 300, depth: 12 }
   const storedProject = loadProjectFromStorage()
-  const [objects, setObjects] = useState<SvgObject[]>(storedProject?.objects ?? [])
+  const initialProject = { stock: storedProject?.stock ?? defaultStock, objects: storedProject?.objects ?? [] }
+  const [history, setHistory] = useState(() => createHistoryState(initialProject))
   const [selectedIds, setSelectedIds] = useState<number[]>([])
-  const [stock, setStock] = useState<Stock>(storedProject?.stock ?? defaultStock)
   const [zoom, setZoom] = useState(100)
   const fileInput = useRef<HTMLInputElement>(null)
   const projectInput = useRef<HTMLInputElement>(null)
+  const dragStartProject = useRef<ProjectSnapshot | null>(null)
   const hasHydratedProject = useRef(false)
+  const objects = history.present.objects
+  const stock = history.present.stock
+  
   const selectedObjects = objects.filter((object) => selectedIds.includes(object.id))
 
   useEffect(() => {
@@ -31,12 +37,30 @@ function App() {
     saveProjectToStorage({ stock, objects })
   }, [stock, objects])
 
-  const updateSelected = (changes: Partial<SvgObject>) => {
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const modifierPressed = event.metaKey || event.ctrlKey
+      if (!modifierPressed) return
+      if (event.key.toLowerCase() === 'z' && !event.shiftKey) {
+        event.preventDefault()
+        setHistory((current) => undoHistory(current))
+      }
+      if (event.key.toLowerCase() === 'y' || (event.key.toLowerCase() === 'z' && event.shiftKey)) {
+        event.preventDefault()
+        setHistory((current) => redoHistory(current))
+      }
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [])
+
+  const updateSelected = (changes: Partial<SvgObject>, live = false) => {
     if (selectedIds.length === 0) return
 
-    let axisAlignedBoundingBox = new AxisAlignedBoundingBox(selectedObjects);
-
-    setObjects((current) => {
+    const axisAlignedBoundingBox = new AxisAlignedBoundingBox(
+      selectedObjects.map((object) => ({ ...object })),
+    )
 
       let transformed = axisAlignedBoundingBox.transform({
         x: changes?.x,
@@ -47,14 +71,14 @@ function App() {
 
       if (changes.rotation !== undefined) {
         const rotationDelta = changes.rotation - selectedObjects[0].rotation
-        const center = { 
-          x: axisAlignedBoundingBox.getMinX() + axisAlignedBoundingBox.getWidth() / 2, 
-          y: axisAlignedBoundingBox.getMinY() + axisAlignedBoundingBox.getHeight() / 2 
+        const center = {
+          x: axisAlignedBoundingBox.getMinX() + axisAlignedBoundingBox.getWidth() / 2,
+          y: axisAlignedBoundingBox.getMinY() + axisAlignedBoundingBox.getHeight() / 2,
         }
         transformed = rotateSelectionAroundPoint(transformed, center, rotationDelta)
       }
 
-      return current.map((object) => {
+      const nextObjects = objects.map((object) => {
         if (!selectedIds.includes(object.id)) return object
 
         const nextObject = transformed.find((item) => item.id === object.id) ?? object
@@ -78,7 +102,12 @@ function App() {
 
         return nextObject
       })
-    })
+
+    if (live) {
+      setHistory((current) => replacePresent(current, { stock: current.present.stock, objects: nextObjects }))
+    } else {
+      setProject({ stock, objects: nextObjects })
+    }
   }
 
   const importFiles = (event: ChangeEvent<HTMLInputElement>) => {
@@ -86,12 +115,27 @@ function App() {
       const reader = new FileReader()
       reader.onload = () => {
         const imported = createImportedObjects(extractPathSvgs(String(reader.result)), file.name, stock.depth)
-        setObjects((current) => [...current, ...imported])
+        setProject({ stock, objects: [...objects, ...imported] })
         setSelectedIds(imported.map((object) => object.id))
       }
       reader.readAsText(file)
     })
     event.target.value = ''
+  }
+
+  const setProject = (nextProject: { stock: Stock, objects: SvgObject[] }) => {
+    setHistory((current) => pushHistory(current, nextProject))
+  }
+
+  const beginGesture = () => {
+    dragStartProject.current = cloneProjectSnapshot(history.present)
+  }
+
+  const endGesture = () => {
+    const startProject = dragStartProject.current
+    dragStartProject.current = null
+    if (!startProject) return
+    setHistory((current) => commitHistory(current, startProject, current.present))
   }
 
   const saveProject = () => {
@@ -107,9 +151,8 @@ function App() {
 
   const newProject = () => {
     const emptyStock: Stock = { width: 400, height: 300, depth: 12 }
-    setObjects([])
+    setProject({ stock: emptyStock, objects: [] })
     setSelectedIds([])
-    setStock(emptyStock)
     clearProjectFromStorage()
   }
 
@@ -121,8 +164,7 @@ function App() {
     reader.onload = () => {
       try {
         const importedProject = deserializeProject(String(reader.result))
-        setObjects(importedProject.objects)
-        setStock(importedProject.stock)
+        setProject({ stock: importedProject.stock, objects: importedProject.objects })
         setSelectedIds([])
       } catch (error) {
         window.alert(error instanceof Error ? error.message : 'Could not import that SimpleCNC project file.')
@@ -134,15 +176,16 @@ function App() {
 
   const deleteSelected = () => {
     if (selectedIds.length === 0) return
-    setObjects((current) => current.filter((object) => !selectedIds.includes(object.id)))
+    setProject({ stock, objects: objects.filter((object) => !selectedIds.includes(object.id)) })
     setSelectedIds([])
   }
 
   const updateStock = (changes: Partial<Stock>) => {
-    setStock((current) => ({ ...current, ...changes }))
-    if (changes.depth !== undefined) {
-      setObjects((current) => current.map((object) => ({ ...object, depth: Math.min(object.depth, changes.depth ?? object.depth) })))
-    }
+    const nextStock = { ...stock, ...changes }
+    const nextObjects = changes.depth !== undefined
+      ? objects.map((object) => ({ ...object, depth: Math.min(object.depth, nextStock.depth) }))
+      : objects
+    setProject({ stock: nextStock, objects: nextObjects })
   }
 
   const updateStockPreset = (value: string) => {
@@ -152,16 +195,19 @@ function App() {
   }
 
   const handleMove = (ids: number[], delta: Point, startPositions?: Record<number, Point>) => {
-    setObjects((current) => current.map((object) => {
-      if (!ids.includes(object.id)) return object
+    setHistory((current) => {
+      const nextObjects = current.present.objects.map((object) => {
+        if (!ids.includes(object.id)) return object
 
-      const start = startPositions?.[object.id] ?? { x: object.x, y: object.y }
-      return {
-        ...object,
-        x: start.x + delta.x,
-        y: start.y + delta.y,
-      }
-    }))
+        const start = startPositions?.[object.id] ?? { x: object.x, y: object.y }
+        return {
+          ...object,
+          x: start.x + delta.x,
+          y: start.y + delta.y,
+        }
+      })
+      return replacePresent(current, { stock: current.present.stock, objects: nextObjects })
+    })
   }
 
   const downloadGcode = async () => {
@@ -177,7 +223,16 @@ function App() {
 
   return (
     <main className="app-shell">
-      <Header onGenerateGCode={downloadGcode} onImportProject={() => projectInput.current?.click()} onNewProject={newProject} onSaveProject={saveProject} />
+      <Header
+        onGenerateGCode={downloadGcode}
+        onImportProject={() => projectInput.current?.click()}
+        onNewProject={newProject}
+        onSaveProject={saveProject}
+        onUndo={() => setHistory((current) => undoHistory(current))}
+        onRedo={() => setHistory((current) => redoHistory(current))}
+        canUndo={history.past.length > 0}
+        canRedo={history.future.length > 0}
+      />
       <input ref={projectInput} type="file" accept=".json,application/json" hidden onChange={importProject} />
       <div className="workspace">
         <LeftSidebar objects={objects} stock={stock} fileInput={fileInput} onImport={importFiles} onSelect={(id, additive) => {
@@ -195,7 +250,7 @@ function App() {
             }
             return [id]
           })
-        }} onMove={handleMove}/>
+        }} onGestureStart={beginGesture} onMove={handleMove} onGestureEnd={endGesture}/>
         <RightSidebar selectedObjects={selectedObjects} stock={stock} onDelete={deleteSelected} onUpdate={updateSelected} />
       </div>
     </main>
