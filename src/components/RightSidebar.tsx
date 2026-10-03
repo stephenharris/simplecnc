@@ -3,6 +3,7 @@ import type { CutOperation, Stock, SvgObject } from '../types/cnc'
 import {AxisAlignedBoundingBox} from '../utils/geometry'
 import bits from '../data/bits.json'
 import './RightSidebar.css'
+import { CommitInput } from './CommitInput'
 
 const operationLabels: Record<CutOperation, string> = {
   'cut-on-path': 'Cut on path',
@@ -56,21 +57,21 @@ export function RightSidebar({ selectedObjects, stock, onDelete, onUpdate }: Rig
               <div className="inspector-section">
                 <div className="section-title">POSITION <span>MM</span></div>
                 <div className="field-grid">
-                  <label>X<input type="number" value={axisAlignedBoundingBox ? Math.round(axisAlignedBoundingBox.getMinX()) : 0} onChange={(event) => onUpdate({x: Number(event.target.value)})} /></label>
-                  <label>Y<input type="number" value={axisAlignedBoundingBox ? Math.round(axisAlignedBoundingBox.getMinY()) : 0} onChange={(event) => onUpdate({y: Number(event.target.value)})} /></label>
+                  <label>X<CommitInput type="number" value={String(Math.round(axisAlignedBoundingBox.getMinX() || 0))} onCommit={(value) => onUpdate({ x: Number(value) })} /></label>
+                  <label>Y<CommitInput type="number" value={String(Math.round(axisAlignedBoundingBox.getMinY() || 0))} onCommit={(value) => onUpdate({ y: Number(value) })} /></label>
                 </div>
               </div>
               <div className="inspector-section">
                 <div className="section-title">SIZE <span>MM</span></div>
                 <div className="field-grid">
-                  <label>Width<input type="number" min="12" step="0.1" value={axisAlignedBoundingBox ? axisAlignedBoundingBox.getWidth() : 0} onChange={(event) => onUpdate({ width: Number(event.target.value) })} /></label>
-                  <label>Height<input type="number" min="12" step="0.1" value={axisAlignedBoundingBox ? axisAlignedBoundingBox.getHeight() : 0} onChange={(event) => onUpdate({ height: Number(event.target.value) })} /></label>
+                  <label>Width<CommitInput type="number" min={12} value={String(axisAlignedBoundingBox.getWidth().toFixed(3) || 0)} onCommit={(value) => onUpdate({ width: Number(value) })} /></label>
+                  <label>Height<CommitInput type="number" min={12} value={String(axisAlignedBoundingBox.getHeight().toFixed(3) || 0)} onCommit={(value) => onUpdate({ height: Number(value) })} /></label>
                 </div>
                 {selected && <label className="toggle-row"><span>Lock proportions</span><input type="checkbox" checked={selected.lockedProportions} onChange={(event) => onUpdate({ lockedProportions: event.target.checked })} /><i /></label>}
               </div>
               {selected && <div className="inspector-section">
                 <div className="section-title">ROTATION <span>DEGREES</span></div>
-                <input className="wide-input" type="number" value={selected.rotation} onChange={(event) => onUpdate({ rotation: Number(event.target.value) })} />
+                <CommitInput className="wide-input" type="number" value={String(selected.rotation)} onCommit={(value) => onUpdate({ rotation: Number(value) })} />
               </div>}
             </div>
           ) : (
@@ -78,7 +79,7 @@ export function RightSidebar({ selectedObjects, stock, onDelete, onUpdate }: Rig
               <div className="inspector-section">
                 <label className="operation-name-field">
                   Operation name
-                  <input type="text" value={selected.operationName} onChange={(event) => onUpdate({ operationName: event.target.value })} />
+                  <CommitInput type="text" value={selected.operationName} onCommit={(value) => onUpdate({ operationName: value })} />
                   <small>Each object exports as its own file</small>
                 </label>
                 <div className="section-title">CUT OPERATION <span>PATH</span></div>
@@ -94,7 +95,7 @@ export function RightSidebar({ selectedObjects, stock, onDelete, onUpdate }: Rig
                 </label>
                 <label className="depth-field">
                   Depth
-                  <input type="number" min="0" max={stock.depth} step="0.1" value={selected.depth} onChange={(event) => onUpdate({ depth: Math.min(stock.depth, Math.max(0, Number(event.target.value))) })} />
+                  <CommitInput type="number" min={0} max={stock.depth} step={0.1} value={String(selected.depth)} onCommit={(value) => onUpdate({ depth: Math.min(stock.depth, Math.max(0, Number(value))) })} />
                   <small>Max {stock.depth} mm, based on stock material</small>
                 </label>
               </div>
