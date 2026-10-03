@@ -39,6 +39,12 @@ function App() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
+      if(event.key.toLocaleLowerCase() === 'delete') {
+        event.preventDefault();
+        deleteSelected();
+        return;
+      }
+
       const modifierPressed = event.metaKey || event.ctrlKey
       if (!modifierPressed) return
       if (event.key.toLowerCase() === 'z' && !event.shiftKey) {
@@ -53,7 +59,7 @@ function App() {
 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [])
+  }, [selectedIds])
 
   const updateSelected = (changes: Partial<SvgObject>, live = false) => {
     if (selectedIds.length === 0) return
