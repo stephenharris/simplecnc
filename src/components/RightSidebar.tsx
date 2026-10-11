@@ -103,7 +103,6 @@ export function RightSidebar({ selectedObjects, stock, onDelete, onUpdate, onAli
                 <label className="operation-name-field">
                   Operation name
                   <CommitInput type="text" value={selected.operationName} onCommit={(value) => onUpdate({ operationName: value })} />
-                  <small>Each object exports as its own file</small>
                 </label>
                 <div className="section-title">CUT OPERATION <span>PATH</span></div>
                 <select className="operation-select" value={selected.operation} onChange={(event) => onUpdate({ operation: event.target.value as CutOperation })}>
