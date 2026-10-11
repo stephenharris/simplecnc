@@ -38,9 +38,19 @@ export const generateGcode = (object: SvgObject, stock: Stock): string => {
 /** Creates one NC file per object and returns a ZIP download payload. */
 export const createGcodeZip = async (objects: SvgObject[], stock: Stock) => {
   const zip = new JSZip()
+  let fileNames = new Set<string>();
   objects.forEach((object) => {
+    // Even if the user has given duplicate operation names, we need to 
+    // ensure unique file names for each object.
+    let fileName = `${sanitizeOperationName(object.operationName)}.nc`;
+    let counter = 1;
+    while (fileNames.has(fileName)) {
+      fileName = `${sanitizeOperationName(object.operationName)}-${counter}.nc`;
+      counter++;
+    }
+    fileNames.add(fileName);
     zip.file(
-      `${sanitizeOperationName(object.operationName)}.nc`,
+      `${fileName}`,
       generateGcode(object, stock)
     )
   })
