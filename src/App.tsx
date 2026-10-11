@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ChangeEvent } from 'react'
 import './App.css'
 import { Canvas } from './components/Canvas'
@@ -10,6 +10,7 @@ import { AxisAlignedBoundingBox, rotateSelectionAroundPoint } from './utils/geom
 import { clearProjectFromStorage, deserializeProject, loadProjectFromStorage, saveProjectToStorage, serializeProject } from './utils/project'
 import { cloneProjectSnapshot, commitHistory, createHistoryState, pushHistory, redoHistory, replacePresent, undoHistory } from './utils/history'
 import { createImportedObjects, extractPathSvgs } from './utils/svg'
+import { KeyboardEventHandler } from './utils/KeyboardEventHandler'
 import type { Point, Stock, SvgObject } from './types/cnc'
 import type { ProjectSnapshot } from './utils/history'
 
@@ -20,6 +21,8 @@ function App() {
   const [history, setHistory] = useState(() => createHistoryState(initialProject))
   const [selectedIds, setSelectedIds] = useState<number[]>([])
   const [zoom, setZoom] = useState(100)
+  const clipboard = useRef<SvgObject[]>([])
+  const pasteCount = useRef(0)
   const fileInput = useRef<HTMLInputElement>(null)
   const projectInput = useRef<HTMLInputElement>(null)
   const dragStartProject = useRef<ProjectSnapshot | null>(null)
@@ -36,30 +39,6 @@ function App() {
     }
     saveProjectToStorage({ stock, objects })
   }, [stock, objects])
-
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if(event.key.toLocaleLowerCase() === 'delete') {
-        event.preventDefault();
-        deleteSelected();
-        return;
-      }
-
-      const modifierPressed = event.metaKey || event.ctrlKey
-      if (!modifierPressed) return
-      if (event.key.toLowerCase() === 'z' && !event.shiftKey) {
-        event.preventDefault()
-        setHistory((current) => undoHistory(current))
-      }
-      if (event.key.toLowerCase() === 'y' || (event.key.toLowerCase() === 'z' && event.shiftKey)) {
-        event.preventDefault()
-        setHistory((current) => redoHistory(current))
-      }
-    }
-
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [selectedIds])
 
   const updateSelected = (changes: Partial<SvgObject>, live = false) => {
     if (selectedIds.length === 0) return
@@ -129,9 +108,9 @@ function App() {
     event.target.value = ''
   }
 
-  const setProject = (nextProject: { stock: Stock, objects: SvgObject[] }) => {
+  const setProject = useCallback((nextProject: { stock: Stock, objects: SvgObject[] }) => {
     setHistory((current) => pushHistory(current, nextProject))
-  }
+  }, [])
 
   const beginGesture = () => {
     dragStartProject.current = cloneProjectSnapshot(history.present)
@@ -180,11 +159,54 @@ function App() {
     event.target.value = ''
   }
 
-  const deleteSelected = () => {
+  const copySelected = useCallback(() => {
+    clipboard.current = selectedObjects.map((object) => ({ ...object }))
+    pasteCount.current = 0
+  }, [selectedObjects])
+
+  const pasteCopied = useCallback(() => {
+    if (clipboard.current.length === 0) return
+
+    const usedIds = new Set(objects.map((object) => object.id))
+    let nextId = objects.reduce((maxId, object) => Math.max(maxId, object.id), Date.now()) + 1
+    const offset = (pasteCount.current + 1) * 10
+    const pastedObjects = clipboard.current.map((object) => {
+      while (usedIds.has(nextId)) nextId += 1
+
+      const pastedObject = {
+        ...object,
+        id: nextId,
+        x: object.x + offset,
+        y: object.y + offset,
+      }
+      usedIds.add(nextId)
+      nextId += 1
+      return pastedObject
+    })
+
+    pasteCount.current += 1
+    setProject({ stock, objects: [...objects, ...pastedObjects] })
+    setSelectedIds(pastedObjects.map((object) => object.id))
+  }, [objects, setProject, stock])
+
+  const deleteSelected = useCallback(() => {
     if (selectedIds.length === 0) return
     setProject({ stock, objects: objects.filter((object) => !selectedIds.includes(object.id)) })
     setSelectedIds([])
-  }
+  }, [objects, selectedIds, setProject, stock])
+
+  useEffect(() => {
+    const keyboardEventHandler = new KeyboardEventHandler({
+      onCtrlC: copySelected,
+      onCtrlV: pasteCopied,
+      onDelete: deleteSelected,
+      onCtrlY: () => setHistory((current) => redoHistory(current)),
+      onCtrlZ: () => setHistory((current) => undoHistory(current)),
+    })
+
+    window.addEventListener('keydown', keyboardEventHandler.handleKeyDown)
+    return () => window.removeEventListener('keydown', keyboardEventHandler.handleKeyDown)
+  }, [copySelected, deleteSelected, pasteCopied])
 
   const updateStock = (changes: Partial<Stock>) => {
     const nextStock = { ...stock, ...changes }
