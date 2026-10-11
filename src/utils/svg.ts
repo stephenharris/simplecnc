@@ -169,7 +169,7 @@ export const createImportedObjects = (pathSvgs: string[], fileName: string, stoc
     pathBoundsHeight: defaultViewBox.height,
     rotation: 0,
     operation: 'cut-on-path',
-    bitId: bits[Object.keys(bits)[0]]?.id,
+    bitId: Object.keys(bits)[0],
     depth: Math.min(3, stockDepth),
     lockedProportions: true,
   }
