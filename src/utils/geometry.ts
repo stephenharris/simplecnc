@@ -98,14 +98,6 @@ export class AxisAlignedBoundingBox {
     return this.objects
   }
 
-  // Returns the center point of the bounding box.
-  getCenter(): { x: number, y: number } {
-    return {
-      x: this.minX + this.width / 2,
-      y: this.minY + this.height / 2,
-    }
-  }
-
   // Applies the given changes to the bounding box and scales/translates the objects accordingly.
   // And returns the modified objects.
   transform(changes: Partial<SvgObject>): SvgObject[] {
