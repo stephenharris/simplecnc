@@ -7,6 +7,8 @@ export type Bounds = {
   height: number
 }
 
+export type Alignment = 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom'
+
 export class AxisAlignedBoundingBox {
   protected objects: SvgObject[]
   protected minX: number = Infinity;
@@ -49,6 +51,59 @@ export class AxisAlignedBoundingBox {
     this.maxY = boundingBox.maxY
     this.width = this.maxX - this.minX
     this.height =  this.maxY - this.minY
+  }
+
+
+  align(alignment: Alignment) {
+    const boundingBox = this.getBounds()
+
+    this.objects = this.objects.map((object) => {
+      switch (alignment) {
+        case 'left':
+          object.x = boundingBox.x
+          break
+        case 'center':
+          object.x = boundingBox.x + (boundingBox.width - object.width) / 2
+          break
+        case 'right':
+          object.x = boundingBox.x + boundingBox.width - object.width
+          break
+        case 'bottom':
+          object.y = boundingBox.y
+          break
+        case 'middle':
+          object.y = boundingBox.y + (boundingBox.height - object.height) / 2
+          break
+        case 'top':
+          object.y = boundingBox.y + boundingBox.height - object.height
+          break
+      }
+      return object;
+    });
+
+    this.computeBoundingBox();
+    return this.objects;
+  }
+
+  getBounds(): Bounds {
+    return {
+      x: this.minX,
+      y: this.minY,
+      width: this.width,
+      height: this.height,
+    }
+  }
+
+  getObjects(): SvgObject[] {
+    return this.objects
+  }
+
+  // Returns the center point of the bounding box.
+  getCenter(): { x: number, y: number } {
+    return {
+      x: this.minX + this.width / 2,
+      y: this.minY + this.height / 2,
+    }
   }
 
   // Applies the given changes to the bounding box and scales/translates the objects accordingly.

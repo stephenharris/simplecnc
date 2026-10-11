@@ -7,6 +7,7 @@ import { LeftSidebar } from './components/LeftSidebar'
 import { RightSidebar } from './components/RightSidebar'
 import { createGcodeZip } from './gcode/generator'
 import { AxisAlignedBoundingBox, rotateSelectionAroundPoint } from './utils/geometry'
+import type { Alignment } from './utils/geometry'
 import { clearProjectFromStorage, deserializeProject, loadProjectFromStorage, saveProjectToStorage, serializeProject } from './utils/project'
 import { cloneProjectSnapshot, commitHistory, createHistoryState, pushHistory, redoHistory, replacePresent, undoHistory } from './utils/history'
 import { createImportedObjects, extractPathSvgs } from './utils/svg'
@@ -195,6 +196,19 @@ function App() {
     setSelectedIds([])
   }, [objects, selectedIds, setProject, stock])
 
+  const alignSelected = useCallback((alignment: Alignment) => {
+    if (selectedObjects.length < 2) return
+
+    const alignedObjects = new AxisAlignedBoundingBox(
+      selectedObjects.map((object) => ({ ...object })),
+    ).align(alignment)
+    const alignedById = new Map(alignedObjects.map((object) => [object.id, object]))
+    setProject({
+      stock,
+      objects: objects.map((object) => alignedById.get(object.id) ?? object),
+    })
+  }, [objects, selectedObjects, setProject, stock])
+
   useEffect(() => {
     const keyboardEventHandler = new KeyboardEventHandler({
       onCtrlC: copySelected,
@@ -279,7 +293,7 @@ function App() {
             return [id]
           })
         }} onGestureStart={beginGesture} onMove={handleMove} onGestureEnd={endGesture}/>
-        <RightSidebar selectedObjects={selectedObjects} stock={stock} onDelete={deleteSelected} onUpdate={updateSelected} />
+        <RightSidebar selectedObjects={selectedObjects} stock={stock} onDelete={deleteSelected} onUpdate={updateSelected} onAlign={alignSelected} />
       </div>
     </main>
   )

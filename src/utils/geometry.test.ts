@@ -63,6 +63,28 @@ describe('geometry helpers', () => {
     expect(box.getHeight()).toBe(15)
   })
 
+  it.each([
+    ['left', [10, 10]],
+    ['center', [25, 30]],
+    ['right', [40, 50]],
+    ['bottom', [20, 20]],
+    ['middle', [35, 30]],
+    ['top', [50, 40]],
+  ] as const)('aligns selected objects to %s', (alignment, expectedPositions) => {
+    const objects = [
+      makeObject(1, 10, 20, 20, 10),
+      makeObject(2, 50, 40, 10, 20),
+    ]
+
+    const aligned = new AxisAlignedBoundingBox(objects).align(alignment)
+
+    expect(aligned.map(({ x, y }) => [x, y])).toEqual(
+      alignment === 'left' || alignment === 'center' || alignment === 'right'
+        ? [[expectedPositions[0], 20], [expectedPositions[1], 40]]
+        : [[10, expectedPositions[0]], [50, expectedPositions[1]]],
+    )
+  })
+
   it('rotates object centers around the center of the selection', () => {
     const objects = [
       makeObject(1, 0, 0, 10, 10),

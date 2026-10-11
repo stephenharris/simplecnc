@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { CutOperation, Stock, SvgObject } from '../types/cnc'
-import {AxisAlignedBoundingBox} from '../utils/geometry'
+import { AxisAlignedBoundingBox } from '../utils/geometry'
+import type { Alignment } from '../utils/geometry'
 import bits from '../data/bits.json'
 import './RightSidebar.css'
 import { CommitInput } from './CommitInput'
@@ -17,9 +18,10 @@ type RightSidebarProps = {
   stock: Stock
   onDelete: () => void
   onUpdate: (changes: Partial<SvgObject>) => void
+  onAlign: (alignment: Alignment) => void
 }
 
-export function RightSidebar({ selectedObjects, stock, onDelete, onUpdate }: RightSidebarProps) {
+export function RightSidebar({ selectedObjects, stock, onDelete, onUpdate, onAlign }: RightSidebarProps) {
   const [activeTab, setActiveTab] = useState<'transform' | 'cut'>('transform')
   const selected = selectedObjects[0]
   let axisAlignedBoundingBox = new AxisAlignedBoundingBox(selectedObjects);
@@ -54,6 +56,27 @@ export function RightSidebar({ selectedObjects, stock, onDelete, onUpdate }: Rig
           )}
           {(activeTab === 'transform' || selectedObjects.length > 1) ? (
             <div role="tabpanel" aria-label="Transform settings">
+              {selectedObjects.length > 1 && (
+                <div className="inspector-section alignment-section">
+                  <div className="section-title">ALIGN OBJECTS</div>
+                  <div className="alignment-controls">
+                    <div role="group" aria-label="Horizontal alignment">
+                      {(['left', 'center', 'right'] as const).map((alignment) => (
+                        <button key={alignment} type="button" onClick={() => onAlign(alignment)}>
+                          {alignment[0].toUpperCase() + alignment.slice(1)}
+                        </button>
+                      ))}
+                    </div>
+                    <div role="group" aria-label="Vertical alignment">
+                      {(['top', 'middle', 'bottom'] as const).map((alignment) => (
+                        <button key={alignment} type="button" onClick={() => onAlign(alignment)}>
+                          {alignment[0].toUpperCase() + alignment.slice(1)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
               <div className="inspector-section">
                 <div className="section-title">POSITION <span>MM</span></div>
                 <div className="field-grid">

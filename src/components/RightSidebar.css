@@ -94,6 +94,32 @@
   font-size: 9px;
 }
 
+.alignment-controls {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.alignment-controls [role="group"] {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.alignment-controls button {
+  border: 1px solid #d3d7ce;
+  background: #fbfaf5;
+  color: #53625d;
+  cursor: pointer;
+  padding: 7px 2px;
+  font-size: 10px;
+}
+
+.alignment-controls button:hover {
+  border-color: #d77941;
+  color: #364547;
+}
+
 .operation-select {
   display: block;
   width: 100%;
