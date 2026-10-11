@@ -1,6 +1,6 @@
 import JSZip from 'jszip'
-import bits from '../data/tools.json'
 import type { Stock, SvgObject } from '../types/cnc'
+import { getTool } from '../utils/tools'
 import { FEED_RATE, PLUNGE_RATE, SAFE_Z, STEP_DOWN } from './constants'
 import { isClosedContour, sanitizeOperationName } from './helpers'
 import { createOperation } from './operations'
@@ -14,7 +14,7 @@ export { isClosedContour, sanitizeOperationName }
 
 /** Generates one GRBL 1.1-compatible file for a single operation. */
 export const generateGcode = (object: SvgObject, stock: Stock): string => {
-  const bit = bits[object.bitId]
+  const bit = getTool(object.bitId)
   if (!bit) throw new Error(`No configured bit found for object "${object.name}"`)
   const toolDiameter = bit.diameter
   const lines = [
@@ -25,7 +25,7 @@ export const generateGcode = (object: SvgObject, stock: Stock): string => {
     'G90', 
     'G17', 
     'G94', 
-    `; Tool: ${bit.name}`, 
+    `; Tool: ${bit.description}`,
     `; Tool diameter: ${toolDiameter.toFixed(3)} mm`, 
     `T${object.bitId} M6`,
     `G0 Z${DEFAULT_SAFE_Z.toFixed(3)}`

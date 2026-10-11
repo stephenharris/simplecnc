@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { CutOperation, Stock, SvgObject } from '../types/cnc'
 import { AxisAlignedBoundingBox } from '../utils/geometry'
 import type { Alignment } from '../utils/geometry'
-import bits from '../data/tools.json'
+import { getTool, toolList } from '../utils/tools'
 import './RightSidebar.css'
 import { CommitInput } from './CommitInput'
 
@@ -24,6 +24,7 @@ type RightSidebarProps = {
 export function RightSidebar({ selectedObjects, stock, onDelete, onUpdate, onAlign }: RightSidebarProps) {
   const [activeTab, setActiveTab] = useState<'transform' | 'cut'>('transform')
   const selected = selectedObjects[0]
+  const selectedTool = selected ? getTool(selected.bitId) : undefined
   let axisAlignedBoundingBox = new AxisAlignedBoundingBox(selectedObjects);
 
   return (
@@ -111,12 +112,9 @@ export function RightSidebar({ selectedObjects, stock, onDelete, onUpdate, onAli
                 <label className="bit-field">
                   Bit
                   <select className="operation-select" value={selected.bitId} onChange={(event) => onUpdate({ bitId: event.target.value })}>
-                    {Object.keys(bits).map((bitId) => {
-                      const bit = bits[bitId];
-                      return <option key={bitId} value={bitId}>{bit.description} ({bit.diameter} mm)</option>
-                    })}
+                    {toolList.map((tool) => <option key={tool.id} value={tool.id}>{tool.description} ({tool.diameter} mm)</option>)}
                   </select>
-                  <small>Diameter {bits[selected.bitId]?.diameterMm ?? bits[Object.keys(bits)[0]]?.diameterMm } mm</small>
+                  <small>Diameter {selectedTool?.diameter ?? toolList[0]?.diameter ?? 0} mm</small>
                 </label>
                 <label className="depth-field">
                   Depth
