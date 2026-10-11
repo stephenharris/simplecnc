@@ -1,0 +1,30 @@
+{
+  "1": {
+    "units": "metric",
+    "shape": "cylindrical",
+    "length": 10,
+    "diameter": 3.175,
+    "description": "2-Flute Spiral Flat Nose 1/8"
+  },
+  "2": {
+    "units": "metric",
+    "shape": "cylindrical",
+    "length": 10,
+    "diameter": 0.8,
+    "description": "2-Flute End Mill .8"
+  },
+  "3": {
+    "units": "metric",
+    "shape": "conical",
+    "length": 9.00316,
+    "diameter": 3.175,
+    "description": "20deg v-bit"
+  },
+  "4": {
+    "units": "metric",
+    "shape": "cylindrical",
+    "length": 10,
+    "diameter": 19.05,
+    "description": "Bowl 0.25R 0.75D 0.25S"
+  }
+}

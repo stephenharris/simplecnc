@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { CutOperation, Stock, SvgObject } from '../types/cnc'
 import { AxisAlignedBoundingBox } from '../utils/geometry'
 import type { Alignment } from '../utils/geometry'
-import bits from '../data/bits.json'
+import bits from '../data/tools.json'
 import './RightSidebar.css'
 import { CommitInput } from './CommitInput'
 
@@ -112,9 +112,12 @@ export function RightSidebar({ selectedObjects, stock, onDelete, onUpdate, onAli
                 <label className="bit-field">
                   Bit
                   <select className="operation-select" value={selected.bitId} onChange={(event) => onUpdate({ bitId: event.target.value })}>
-                    {bits.map((bit) => <option key={bit.id} value={bit.id}>{bit.name} ({bit.type}, {bit.diameterMm} mm)</option>)}
+                    {Object.keys(bits).map((bitId) => {
+                      const bit = bits[bitId];
+                      return <option key={bitId} value={bitId}>{bit.description} ({bit.diameter} mm)</option>
+                    })}
                   </select>
-                  <small>Diameter {bits.find((bit) => bit.id === selected.bitId)?.diameterMm ?? bits[0].diameterMm} mm</small>
+                  <small>Diameter {bits[selected.bitId]?.diameterMm ?? bits[Object.keys(bits)[0]]?.diameterMm } mm</small>
                 </label>
                 <label className="depth-field">
                   Depth
