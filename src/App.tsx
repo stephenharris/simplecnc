@@ -165,6 +165,17 @@ function App() {
     pasteCount.current = 0
   }, [selectedObjects])
 
+  const generateUniqueName = useCallback((prefix: string) => {
+    const usedNames = new Set(objects.map((object) => object.name))
+    let nextName = `${prefix}`
+    let counter = 1;
+    while (usedNames.has(nextName)) {
+      nextName = `${prefix}-${counter}`
+      counter += 1
+    }
+    return nextName
+  }, [objects])
+
   const pasteCopied = useCallback(() => {
     if (clipboard.current.length === 0) return
 
@@ -173,10 +184,12 @@ function App() {
     const offset = (pasteCount.current + 1) * 10
     const pastedObjects = clipboard.current.map((object) => {
       while (usedIds.has(nextId)) nextId += 1
-
+      const nextName = generateUniqueName(object.name)
       const pastedObject = {
         ...object,
         id: nextId,
+        name: `${nextName}`,
+        operationName: `${nextName}`,
         x: object.x + offset,
         y: object.y + offset,
       }
