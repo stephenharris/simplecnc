@@ -3,6 +3,7 @@ import type { Point, Stock, SvgObject } from '../types/cnc'
 import './Canvas.css'
 import { AxisAlignedBoundingBox } from '../utils/geometry'
 import { getDepthColor } from '../utils/color'
+import { Grid } from './Grid'
 
 type CanvasProps = {
   objects: SvgObject[]
@@ -128,12 +129,11 @@ export function Canvas({ objects, selectedIds, stock, zoom, onZoomChange, onSele
       </div>
 
       <div className="canvas-scroll">
-        <div className="workbench" style={{ width: `${Math.min(760, stock.width * 1.45) * zoom / 100}px`, aspectRatio: `${stock.width} / ${stock.height}` }}>
+        <div className="workbench" style={{ width: `${900 * zoom / 100}px`, aspectRatio: `${stock.width} / ${stock.height}` }}>
           <div className="stock-label">STOCK / {stock.width} × {stock.height} MM</div>
           <div className="stock-surface">
-            {[...Array(9)].map((_, index) => <span key={index} className="grid-line" style={{ left: `${(index + 1) * 10}%` }} />)}
-            {[...Array(5)].map((_, index) => <span key={index} className="grid-line horizontal" style={{ bottom: `${(index + 1) * 16.666}%` }} />)}
-            
+            <Grid maxSpan={stock.width} direction="vertical" />
+            <Grid maxSpan={stock.height} direction="horizontal" />
             {selectedIds.length > 0 && <div 
               className='axis-aligned-selection-box'
               style={{
@@ -189,8 +189,6 @@ export function Canvas({ objects, selectedIds, stock, zoom, onZoomChange, onSele
               </div>
             ))}
           </div>
-          <span className="axis-x">X 0 <b>{stock.width / 2}</b> {stock.width} mm</span>
-          <span className="axis-y">Y {stock.height}<b>{stock.height / 2}</b>0</span>
         </div>
       </div>
 

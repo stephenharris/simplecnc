@@ -1,0 +1,37 @@
+.grid-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-left: 1px solid rgba(181, 191, 181, .4);
+  display: flex;
+  justify-content: center;
+}
+
+.grid-line.horizontal {
+  left: 0;
+  right: 0;
+  top: auto;
+  border-left: 0;
+  border-bottom: 1px solid rgba(181, 191, 181, .4);
+}
+
+.axis-x,
+.axis-y {
+  position: absolute;
+  color: #87918a;
+  font: 9px monospace;
+}
+
+.axis-x {
+  position: absolute;
+  bottom: -30px;
+}
+
+.axis-y {
+  right: calc(100% + 10px);
+}
+
+.axis-x b,
+.axis-y b {
+  font-weight: normal;
+}
