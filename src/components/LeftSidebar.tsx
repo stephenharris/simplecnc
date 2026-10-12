@@ -1,6 +1,7 @@
 import type { ChangeEvent, RefObject } from 'react'
 import type { Stock, SvgObject } from '../types/cnc'
 import './LeftSidebar.css'
+import { CommitInput } from './CommitInput'
 
 type LeftSidebarProps = {
   objects: SvgObject[]
@@ -63,11 +64,11 @@ export function LeftSidebar({ objects, stock, fileInput, onImport, onSelect, onS
         <div className="field-grid">
           <label>
             Width
-            <input type="number" value={stock.width} onChange={(event) => onStockChange({ width: Number(event.target.value) })} />
+            <CommitInput type="number" value={stock.width.toString()} onCommit={(value) => onStockChange({ width: Number(value) })} />
           </label>
           <label>
             Height
-            <input type="number" value={stock.height} onChange={(event) => onStockChange({ height: Number(event.target.value) })} />
+            <CommitInput type="number" value={stock.height.toString()} onCommit={(value) => onStockChange({ height: Number(value) })} />
           </label>
         </div>
         <label className="stock-depth">
