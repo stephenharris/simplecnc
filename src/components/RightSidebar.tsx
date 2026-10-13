@@ -142,6 +142,14 @@ export function RightSidebar({ selectedObjects, stock, onDelete, onUpdate, onAli
                   <small>mm per pass</small>
                 </label>
 
+                {selected.cut.operation === 'pocket' && (
+                  <label className="depth-field">
+                    Step over
+                    <CommitInput type="number" min={0.1} max={100} step={0.1} value={String(selected.cut.stepOver ?? 50)} onCommit={(value) => onUpdate({ cut: { stepOver: Math.min(100, Math.max(0.1, Number(value))) } })} />
+                    <small>Percentage of bit diameter</small>
+                  </label>
+                )}
+
               </div>
             </div>
           )}

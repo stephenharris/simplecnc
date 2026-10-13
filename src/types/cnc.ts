@@ -7,6 +7,7 @@ export type CutSettings = {
   feedRate: number
   plungeRate: number
   depthPerPass: number
+  stepOver?: number
 }
 
 export type SvgObject = {
