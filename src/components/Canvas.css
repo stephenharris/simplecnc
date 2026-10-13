@@ -137,6 +137,28 @@
   outline-offset: 5px;
 }
 
+.alignment-guide {
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+  border-color: #d77941;
+  border-style: dashed;
+  border-width: 0;
+  filter: drop-shadow(0 0 2px rgba(215, 121, 65, .7));
+}
+
+.alignment-guide-vertical {
+  top: 0;
+  bottom: 0;
+  border-left-width: 1px;
+}
+
+.alignment-guide-horizontal {
+  left: 0;
+  right: 0;
+  border-bottom-width: 1px;
+}
+
 .handle {
   position: absolute;
   width: 7px;

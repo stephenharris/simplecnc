@@ -99,7 +99,7 @@ function App() {
           onUpdate={selection.updateSelected}
           onSelect={selection.select}
           onGestureStart={project.beginGesture}
-          onMove={(ids, delta, startPositions) => project.moveObjects(ids, delta, startPositions, gridSnap.settings)}
+          onMove={(ids, delta, startPositions, skipGridSnap) => project.moveObjects(ids, delta, startPositions, gridSnap.settings, skipGridSnap)}
           onGestureEnd={project.endGesture}
         />
         <RightSidebar

@@ -70,6 +70,7 @@ export function useProject() {
     delta: Point,
     startPositions?: Record<number, Point>,
     gridSnap?: GridSnapSettings,
+    skipGridSnap?: Partial<Record<keyof Point, boolean>>,
   ) => {
     updateProjectLive((current) => {
       const movingObjects = current.objects.filter((object) => ids.includes(object.id))
@@ -77,10 +78,10 @@ export function useProject() {
 
       const startX = Math.min(...movingObjects.map((object) => startPositions?.[object.id]?.x ?? object.x))
       const startY = Math.min(...movingObjects.map((object) => startPositions?.[object.id]?.y ?? object.y))
-      const deltaX = gridSnap?.enabled
+      const deltaX = gridSnap?.enabled && !skipGridSnap?.x
         ? snapToGrid(startX + delta.x, gridSnap.spacing) - startX
         : delta.x
-      const deltaY = gridSnap?.enabled
+      const deltaY = gridSnap?.enabled && !skipGridSnap?.y
         ? snapToGrid(startY + delta.y, gridSnap.spacing) - startY
         : delta.y
 

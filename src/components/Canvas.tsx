@@ -1,7 +1,8 @@
-import { useRef, type PointerEvent } from 'react'
+import { useRef, useState, type PointerEvent } from 'react'
 import type { Point, Stock, SvgObject } from '../types/cnc'
 import './Canvas.css'
 import { AxisAlignedBoundingBox } from '../utils/geometry'
+import { snapToObjectAlignment } from '../utils/alignmentSnap'
 import { getDepthColor } from '../utils/color'
 import { Grid } from './Grid'
 import type { GridSnapSettings } from '../utils/grid'
@@ -17,7 +18,12 @@ type CanvasProps = {
   onZoomChange: (zoom: number) => void
   onSelect: (id: number, additive: boolean) => void
   onGestureStart: () => void
-  onMove: (ids: number[], delta: Point, startPositions?: Record<number, Point>) => void
+  onMove: (
+    ids: number[],
+    delta: Point,
+    startPositions?: Record<number, Point>,
+    skipGridSnap?: Partial<Record<keyof Point, boolean>>,
+  ) => void
   onGestureEnd: () => void
   onUpdate: (changes: Partial<SvgObject>, live?: boolean) => void
 }
@@ -28,6 +34,7 @@ export function Canvas({ objects, selectedIds, stock, zoom, gridSnap, onGridSnap
   const axisAlignedBox = new AxisAlignedBoundingBox(selectedObjects);
   const lockedProportions = selectedObjects.some((item) => item.lockedProportions);
   const hasDragged = useRef(false)
+  const [alignmentGuides, setAlignmentGuides] = useState<{ x: number | null; y: number | null }>({ x: null, y: null })
 
 
   const beginDrag = (event: PointerEvent<HTMLDivElement>, object: SvgObject) => {
@@ -51,12 +58,28 @@ export function Canvas({ objects, selectedIds, stock, zoom, gridSnap, onGridSnap
       if (Math.hypot(moveEvent.clientX - startX, moveEvent.clientY - startY) > 3) {
         hasDragged.current = true
       }
-      onMove(ids, { x: deltaX, y: -deltaY }, startPositions)
+      const requestedDelta = { x: deltaX, y: -deltaY }
+      const alignmentSnap = snapToObjectAlignment(
+        objects.map((item) => ({
+          ...item,
+          x: startPositions[item.id]?.x ?? item.x,
+          y: startPositions[item.id]?.y ?? item.y,
+        })),
+        ids,
+        requestedDelta,
+        { x: (stock.width * 6) / rect.width, y: (stock.height * 6) / rect.height },
+      )
+      setAlignmentGuides({ x: alignmentSnap.guideX, y: alignmentSnap.guideY })
+      onMove(ids, alignmentSnap.delta, startPositions, {
+        x: alignmentSnap.guideX !== null,
+        y: alignmentSnap.guideY !== null,
+      })
     }
     const end = () => {
       window.removeEventListener('pointermove', move)
       window.removeEventListener('pointerup', end)
       window.removeEventListener('pointercancel', end)
+      setAlignmentGuides({ x: null, y: null })
       onGestureEnd()
     }
     window.addEventListener('pointermove', move)
@@ -219,6 +242,18 @@ export function Canvas({ objects, selectedIds, stock, zoom, gridSnap, onGridSnap
 
               </div>
             ))}
+            {alignmentGuides.x !== null && (
+              <div
+                className="alignment-guide alignment-guide-vertical"
+                style={{ left: `${(alignmentGuides.x / stock.width) * 100}%` }}
+              />
+            )}
+            {alignmentGuides.y !== null && (
+              <div
+                className="alignment-guide alignment-guide-horizontal"
+                style={{ bottom: `${(alignmentGuides.y / stock.height) * 100}%` }}
+              />
+            )}
           </div>
         </div>
       </div>
