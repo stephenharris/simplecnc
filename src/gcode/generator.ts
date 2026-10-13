@@ -14,20 +14,20 @@ export { isClosedContour, sanitizeOperationName }
 
 /** Generates one GRBL 1.1-compatible file for a single operation. */
 export const generateGcode = (object: SvgObject, stock: Stock): string => {
-  const bit = getTool(object.bitId)
+  const bit = getTool(object.cut.bitId)
   if (!bit) throw new Error(`No configured bit found for object "${object.name}"`)
   const toolDiameter = bit.diameter
   const lines = [
     `; SimpleCNC / ${object.operationName}`, 
     '; GRBL 1.1 / Z0 at material top / origin: bottom-left', 
-    `; Stepdown: ${DEFAULT_STEPDOWN.toFixed(2)} mm`, 
+    `; Stepdown: ${object.cut.depthPerPass.toFixed(2)} mm`,
     'G21', 
     'G90', 
     'G17', 
     'G94', 
     `; Tool: ${bit.description}`,
     `; Tool diameter: ${toolDiameter.toFixed(3)} mm`, 
-    `T${object.bitId} M6`,
+    `T${object.cut.bitId} M6`,
     `G0 Z${DEFAULT_SAFE_Z.toFixed(3)}`
   ]
   createOperation(object, toolDiameter).generateDepthPasses(lines, stock)

@@ -15,9 +15,14 @@ const makeObject = (id: number, x: number, y: number, width: number, height: num
   x,
   y,
   rotation: 0,
-  operation: 'cut-on-path',
-  bitId: '2-flute-spiral-flat-nose-1-8',
-  depth: 1,
+  cut: {
+    operation: 'cut-on-path',
+    bitId: '2-flute-spiral-flat-nose-1-8',
+    depth: 1,
+    feedRate: 600,
+    plungeRate: 250,
+    depthPerPass: 0.7,
+  },
   lockedProportions: false,
   svg: '',
 })

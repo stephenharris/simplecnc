@@ -1,5 +1,14 @@
 export type CutOperation = 'cut-on-path' | 'cut-outside' | 'cut-inside' | 'pocket'
 
+export type CutSettings = {
+  operation: CutOperation
+  bitId: string
+  depth: number
+  feedRate: number
+  plungeRate: number
+  depthPerPass: number
+}
+
 export type SvgObject = {
   id: number
   name: string
@@ -17,11 +26,13 @@ export type SvgObject = {
   x: number
   y: number
   rotation: number
-  operation: CutOperation
-  bitId: string
-  depth: number
+  cut: CutSettings
   lockedProportions: boolean
   svg: string
+}
+
+export type SvgObjectUpdate = Omit<Partial<SvgObject>, 'cut'> & {
+  cut?: Partial<CutSettings>
 }
 
 export type Stock = {

@@ -5,7 +5,7 @@ import { CutOutsideOperation } from './cut-outside-operation'
 import { PocketOperation } from './pocket-operation'
 
 export const createOperation = (object: SvgObject, toolDiameter: number) => {
-  switch (object.operation) {
+  switch (object.cut.operation) {
     case 'cut-outside': return new CutOutsideOperation(object, toolDiameter)
     case 'cut-inside': return new CutInsideOperation(object, toolDiameter)
     case 'pocket': return new PocketOperation(object, toolDiameter)

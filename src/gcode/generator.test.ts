@@ -3,29 +3,38 @@ import JSZip from 'jszip'
 import { createGcodeZip, generateGcode, isClosedContour, sanitizeOperationName } from './generator'
 import { toMachinePoint } from './helpers'
 import { createImportedObjects } from '../utils/svg'
-import type { Stock, SvgObject } from '../types/cnc'
+import type { CutSettings, Stock, SvgObject } from '../types/cnc'
 
 const stock: Stock = { width: 100, height: 100, depth: 2 }
-const makeObject = (overrides: Partial<SvgObject> = {}): SvgObject => ({
-  id: 1,
-  name: 'square.svg / path 1',
-  operationName: 'Outline plate',
-  src: '',
-  pathData: 'M 0 0 L 10 0 L 10 10 L 0 10 Z',
-  viewBoxWidth: 10,
-  viewBoxHeight: 10,
-  width: 10,
-  height: 10,
-  x: 20,
-  y: 30,
-  rotation: 0,
-  operation: 'cut-on-path',
-  bitId: '1',
-  depth: 1.2,
-  lockedProportions: true,
-  svg: '',
-  ...overrides,
-})
+const makeObject = (overrides: Omit<Partial<SvgObject>, 'cut'> & { cut?: Partial<CutSettings> } = {}): SvgObject => {
+  const { cut, ...objectOverrides } = overrides
+  return {
+    id: 1,
+    name: 'square.svg / path 1',
+    operationName: 'Outline plate',
+    src: '',
+    pathData: 'M 0 0 L 10 0 L 10 10 L 0 10 Z',
+    viewBoxWidth: 10,
+    viewBoxHeight: 10,
+    width: 10,
+    height: 10,
+    x: 20,
+    y: 30,
+    rotation: 0,
+    lockedProportions: true,
+    svg: '',
+    ...objectOverrides,
+    cut: {
+      operation: 'cut-on-path',
+      bitId: '1',
+      depth: 1.2,
+      feedRate: 600,
+      plungeRate: 250,
+      depthPerPass: 0.7,
+      ...cut,
+    },
+  }
+}
 
 describe('gcode generator', () => {
   it('identifies closed contours with a repeated endpoint', () => {
@@ -54,6 +63,17 @@ describe('gcode generator', () => {
     expect(gcode.endsWith('M2\n')).toBe(true)
   })
 
+  it('uses each cut operation’s feed, plunge, and depth-per-pass settings', () => {
+    const gcode = generateGcode(makeObject({
+      cut: { feedRate: 850, plungeRate: 125, depthPerPass: 0.4 },
+    }), stock)
+
+    expect(gcode).toContain('; Stepdown: 0.40 mm')
+    expect(gcode).toContain('G1 Z-0.400 F125')
+    expect(gcode).toContain('G1 X30.000 Y40.000 F850')
+    expect(gcode).toContain('; Pass depth: 0.800 mm')
+  })
+
   it('keeps snowman paths at their individual imported scale', () => {
     const snowmanBody = makeObject({
       name: 'snowman.svg / path 2',
@@ -69,7 +89,7 @@ describe('gcode generator', () => {
       height: 145.1215,
       x: 30,
       y: 40,
-      depth: 0.7,
+      cut: { depth: 0.7 },
     })
     const firstPoint = toMachinePoint({ x: 12.836, y: 5.144 }, snowmanBody)
 
@@ -92,20 +112,20 @@ describe('gcode generator', () => {
   })
 
   it('applies cutter-radius offsets for closed inside and outside cuts', () => {
-    const inside = generateGcode(makeObject({ operation: 'cut-inside' }), stock)
-    const outside = generateGcode(makeObject({ operation: 'cut-outside' }), stock)
+    const inside = generateGcode(makeObject({ cut: { operation: 'cut-inside' } }), stock)
+    const outside = generateGcode(makeObject({ cut: { operation: 'cut-outside' } }), stock)
     expect(inside).toContain('G1 X21.588 Y38.413')
     expect(outside).toContain('G1 X31.588 Y40.000')
   })
 
   it('keeps pocket offsets inward when the source contour winding is reversed', () => {
-    const reversed = generateGcode(makeObject({ operation: 'pocket', pathData: 'M 0 0 L 0 10 L 10 10 L 10 0 Z' }), stock)
+    const reversed = generateGcode(makeObject({ cut: { operation: 'pocket' }, pathData: 'M 0 0 L 0 10 L 10 10 L 10 0 Z' }), stock)
     expect(reversed).toContain('G1 Z-0.700 F250')
     expect(reversed).not.toContain('G1 X18.413 Y41.588')
   })
 
   it('starts pocketing at the middle and proceeds outward through concentric contours', () => {
-    const pocket = generateGcode(makeObject({ operation: 'pocket', width: 40, height: 40, viewBoxWidth: 40, viewBoxHeight: 40, pathData: 'M 0 0 L 40 0 L 40 40 L 0 40 Z' }), stock)
+    const pocket = generateGcode(makeObject({ cut: { operation: 'pocket' }, width: 40, height: 40, viewBoxWidth: 40, viewBoxHeight: 40, pathData: 'M 0 0 L 40 0 L 40 40 L 0 40 Z' }), stock)
     const contourStarts = pocket
       .split('\n')
       .filter((line) => line.startsWith('G0 X') && !line.startsWith('G0 X0'))

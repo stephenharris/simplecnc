@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { CutOperation, Stock, SvgObject } from '../types/cnc'
+import type { CutOperation, Stock, SvgObject, SvgObjectUpdate } from '../types/cnc'
 import { AxisAlignedBoundingBox } from '../utils/geometry'
 import type { Alignment } from '../utils/geometry'
 import { getTool, toolList } from '../utils/tools'
@@ -17,14 +17,14 @@ type RightSidebarProps = {
   selectedObjects: SvgObject[]
   stock: Stock
   onDelete: () => void
-  onUpdate: (changes: Partial<SvgObject>) => void
+  onUpdate: (changes: SvgObjectUpdate) => void
   onAlign: (alignment: Alignment) => void
 }
 
 export function RightSidebar({ selectedObjects, stock, onDelete, onUpdate, onAlign }: RightSidebarProps) {
   const [activeTab, setActiveTab] = useState<'transform' | 'cut'>('transform')
   const selected = selectedObjects[0]
-  const selectedTool = selected ? getTool(selected.bitId) : undefined
+  const selectedTool = selected ? getTool(selected.cut.bitId) : undefined
   let axisAlignedBoundingBox = new AxisAlignedBoundingBox(selectedObjects);
 
   return (
@@ -107,22 +107,41 @@ export function RightSidebar({ selectedObjects, stock, onDelete, onUpdate, onAli
                 </label>
                 <label className="operation-name-field">
                   Cut operation
-                  <select className="operation-select" value={selected.operation} onChange={(event) => onUpdate({ operation: event.target.value as CutOperation })}>
+                  <select className="operation-select" value={selected.cut.operation} onChange={(event) => onUpdate({ cut: { operation: event.target.value as CutOperation } })}>
                     {Object.entries(operationLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                   </select>
                 </label>
                 <label className="bit-field">
                   Bit
-                  <select className="operation-select" value={selected.bitId} onChange={(event) => onUpdate({ bitId: event.target.value })}>
+                  <select className="operation-select" value={selected.cut.bitId} onChange={(event) => onUpdate({ cut: { bitId: event.target.value } })}>
                     {toolList.map((tool) => <option key={tool.id} value={tool.id}>{tool.description} ({tool.diameter} mm)</option>)}
                   </select>
                   <small>Diameter {selectedTool?.diameter ?? toolList[0]?.diameter ?? 0} mm</small>
                 </label>
                 <label className="depth-field">
-                  Depth
-                  <CommitInput type="number" min={0} max={stock.depth} step={0.1} value={String(selected.depth)} onCommit={(value) => onUpdate({ depth: Math.min(stock.depth, Math.max(0, Number(value))) })} />
+                  Cut Depth
+                  <CommitInput type="number" min={0} max={stock.depth} step={0.1} value={String(selected.cut.depth)} onCommit={(value) => onUpdate({ cut: { depth: Math.min(stock.depth, Math.max(0, Number(value))) } })} />
                   <small>Max {stock.depth} mm, based on stock material</small>
                 </label>
+
+                <label className="depth-field">
+                  Feed rate
+                  <CommitInput type="number" min={1} step={1} value={String(selected.cut.feedRate)} onCommit={(value) => onUpdate({ cut: { feedRate: Math.max(1, Number(value)) } })} />
+                  <small>mm/min</small>
+                </label>
+
+                <label className="depth-field">
+                  Plunge rate
+                  <CommitInput type="number" min={1} step={1} value={String(selected.cut.plungeRate)} onCommit={(value) => onUpdate({ cut: { plungeRate: Math.max(1, Number(value)) } })} />
+                  <small>mm/min</small>
+                </label>
+
+                <label className="depth-field">
+                  Depth per pass
+                  <CommitInput type="number" min={0.1} max={stock.depth} step={0.1} value={String(selected.cut.depthPerPass)} onCommit={(value) => onUpdate({ cut: { depthPerPass: Math.min(stock.depth, Math.max(0.1, Number(value))) } })} />
+                  <small>mm per pass</small>
+                </label>
+
               </div>
             </div>
           )}

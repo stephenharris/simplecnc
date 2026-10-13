@@ -1,6 +1,7 @@
 import { makeAbsolute, parseSVG } from 'svg-path-parser'
 import type { SvgObject } from '../types/cnc'
 import bits from '../data/tools.json'
+import { createCutSettings } from './cutSettings'
 
 /** Reads the SVG viewBox or intrinsic dimensions and maps them to a 100 mm import width. */
 export const getSvgSize = (svg: string) => {
@@ -168,9 +169,7 @@ export const createImportedObjects = (pathSvgs: string[], fileName: string, stoc
     pathBoundsWidth: defaultViewBox.width,
     pathBoundsHeight: defaultViewBox.height,
     rotation: 0,
-    operation: 'cut-on-path',
-    bitId: Object.keys(bits)[0],
-    depth: Math.min(3, stockDepth),
+    cut: createCutSettings(Object.keys(bits)[0], Math.min(3, stockDepth)),
     lockedProportions: true,
   }
 })

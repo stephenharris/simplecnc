@@ -21,9 +21,14 @@ describe('project persistence', () => {
           x: 20,
           y: 30,
           rotation: 0,
-          operation: 'cut-on-path' as const,
-          bitId: '2-flute-spiral-flat-nose-1-8',
-          depth: 1.2,
+          cut: {
+            operation: 'cut-on-path' as const,
+            bitId: '2-flute-spiral-flat-nose-1-8',
+            depth: 1.2,
+            feedRate: 600,
+            plungeRate: 250,
+            depthPerPass: 0.7,
+          },
           lockedProportions: true,
           svg: '<svg xmlns="http://www.w3.org/2000/svg"><path d="M 0 0 L 10 0 L 10 10 Z" /></svg>',
         },
@@ -46,4 +51,5 @@ describe('project persistence', () => {
 
     expect(object.src).toMatch(/^data:image\/svg\+xml/)
   })
+
 })

@@ -1,5 +1,5 @@
 import { useRef, useState, type PointerEvent } from 'react'
-import type { Point, Stock, SvgObject } from '../types/cnc'
+import type { Point, Stock, SvgObject, SvgObjectUpdate } from '../types/cnc'
 import './Canvas.css'
 import { AxisAlignedBoundingBox } from '../utils/geometry'
 import { snapToObjectAlignment } from '../utils/alignmentSnap'
@@ -25,7 +25,7 @@ type CanvasProps = {
     skipGridSnap?: Partial<Record<keyof Point, boolean>>,
   ) => void
   onGestureEnd: () => void
-  onUpdate: (changes: Partial<SvgObject>, live?: boolean) => void
+  onUpdate: (changes: SvgObjectUpdate, live?: boolean) => void
 }
 
 export function Canvas({ objects, selectedIds, stock, zoom, gridSnap, onGridSnapEnabledChange, onGridSnapSpacingChange, onZoomChange, onSelect, onGestureStart, onMove, onGestureEnd, onUpdate }: CanvasProps) {
@@ -220,7 +220,7 @@ export function Canvas({ objects, selectedIds, stock, zoom, gridSnap, onGridSnap
                   }
                 }}
                 style={{ 
-                  color: object.operation === 'pocket' ? getDepthColor(object.depth, stock.depth) : 'transparent',
+                  color: object.cut.operation === 'pocket' ? getDepthColor(object.cut.depth, stock.depth) : 'transparent',
                   left: `${object.x / stock.width * 100}%`, 
                   bottom: `${object.y / stock.height * 100}%`, 
                   width: `${object.width / stock.width * 100}%`, 
@@ -229,7 +229,7 @@ export function Canvas({ objects, selectedIds, stock, zoom, gridSnap, onGridSnap
                }}
               >
                 <div
-                  className={`operation-${object.operation}`}
+                  className={`operation-${object.cut.operation}`}
                   style={{
                     position: 'absolute',
                     inset: 0,

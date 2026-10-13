@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react'
 import { AxisAlignedBoundingBox, rotateSelectionAroundPoint } from '../utils/geometry'
 import type { Alignment } from '../utils/geometry'
-import type { Stock, SvgObject } from '../types/cnc'
+import type { Stock, SvgObject, SvgObjectUpdate } from '../types/cnc'
 import type { ProjectSnapshot } from '../utils/history'
 import type { GridSnapSettings } from '../utils/grid'
 import { snapToGrid } from '../utils/grid'
@@ -27,7 +27,7 @@ export function useSelection({ objects, stock, gridSnap, setProject, updateProje
     })
   }, [])
 
-  const updateSelected = useCallback((changes: Partial<SvgObject>, live = false) => {
+  const updateSelected = useCallback((changes: SvgObjectUpdate, live = false) => {
     if (selectedIds.length === 0) return
 
     const axisAlignedBoundingBox = new AxisAlignedBoundingBox(selectedObjects.map((object) => ({ ...object })))
@@ -54,9 +54,7 @@ export function useSelection({ objects, stock, gridSnap, setProject, updateProje
 
       if (changes.lockedProportions !== undefined) nextObject.lockedProportions = changes.lockedProportions
       if (changes.operationName !== undefined) nextObject.operationName = changes.operationName
-      if (changes.operation !== undefined) nextObject.operation = changes.operation
-      if (changes.bitId !== undefined) nextObject.bitId = changes.bitId
-      if (changes.depth !== undefined) nextObject.depth = changes.depth
+      if (changes.cut !== undefined) nextObject.cut = { ...nextObject.cut, ...changes.cut }
 
       if (nextObject.lockedProportions) {
         const aspectRatio = nextObject.width > 0 && nextObject.height > 0

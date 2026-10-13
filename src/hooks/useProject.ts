@@ -54,7 +54,10 @@ export function useProject() {
   const updateStock = useCallback((changes: Partial<Stock>) => {
     const nextStock = { ...stock, ...changes }
     const nextObjects = changes.depth !== undefined
-      ? objects.map((object) => ({ ...object, depth: Math.min(object.depth, nextStock.depth) }))
+      ? objects.map((object) => ({
+        ...object,
+        cut: { ...object.cut, depth: Math.min(object.cut.depth, nextStock.depth) },
+      }))
       : objects
     setProject({ stock: nextStock, objects: nextObjects })
   }, [objects, setProject, stock])
