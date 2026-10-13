@@ -5,6 +5,7 @@ import { Header } from './components/Header'
 import { LeftSidebar } from './components/LeftSidebar'
 import { RightSidebar } from './components/RightSidebar'
 import { useGcodeDownload } from './hooks/useGcodeDownload'
+import { useGridSnap } from './hooks/useGridSnap'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { useObjectClipboard } from './hooks/useObjectClipboard'
 import { useProject } from './hooks/useProject'
@@ -16,9 +17,11 @@ import { clearProjectFromStorage } from './utils/project'
 
 function App() {
   const project = useProject()
+  const gridSnap = useGridSnap()
   const selection = useSelection({
     objects: project.objects,
     stock: project.stock,
+    gridSnap: gridSnap.settings,
     setProject: project.setProject,
     updateProjectLive: project.updateProjectLive,
   })
@@ -88,12 +91,15 @@ function App() {
           objects={project.objects}
           selectedIds={selection.selectedIds}
           stock={project.stock}
+          gridSnap={gridSnap.settings}
+          onGridSnapEnabledChange={gridSnap.setEnabled}
+          onGridSnapSpacingChange={gridSnap.setSpacing}
           zoom={zoom}
           onZoomChange={setZoom}
           onUpdate={selection.updateSelected}
           onSelect={selection.select}
           onGestureStart={project.beginGesture}
-          onMove={project.moveObjects}
+          onMove={(ids, delta, startPositions) => project.moveObjects(ids, delta, startPositions, gridSnap.settings)}
           onGestureEnd={project.endGesture}
         />
         <RightSidebar

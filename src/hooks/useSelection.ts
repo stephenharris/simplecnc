@@ -3,15 +3,18 @@ import { AxisAlignedBoundingBox, rotateSelectionAroundPoint } from '../utils/geo
 import type { Alignment } from '../utils/geometry'
 import type { Stock, SvgObject } from '../types/cnc'
 import type { ProjectSnapshot } from '../utils/history'
+import type { GridSnapSettings } from '../utils/grid'
+import { snapToGrid } from '../utils/grid'
 
 type UseSelectionOptions = {
   objects: SvgObject[]
   stock: Stock
+  gridSnap: GridSnapSettings
   setProject: (project: ProjectSnapshot) => void
   updateProjectLive: (update: (current: ProjectSnapshot) => ProjectSnapshot) => void
 }
 
-export function useSelection({ objects, stock, setProject, updateProjectLive }: UseSelectionOptions) {
+export function useSelection({ objects, stock, gridSnap, setProject, updateProjectLive }: UseSelectionOptions) {
   const [selectedIds, setSelectedIds] = useState<number[]>([])
   const selectedObjects = objects.filter((object) => selectedIds.includes(object.id))
 
@@ -44,7 +47,7 @@ export function useSelection({ objects, stock, setProject, updateProjectLive }: 
       transformed = rotateSelectionAroundPoint(transformed, center, rotationDelta)
     }
 
-    const nextObjects = objects.map((object) => {
+    let nextObjects = objects.map((object) => {
       if (!selectedIds.includes(object.id)) return object
 
       const nextObject = transformed.find((item) => item.id === object.id) ?? object
@@ -69,12 +72,22 @@ export function useSelection({ objects, stock, setProject, updateProjectLive }: 
       return nextObject
     })
 
+    if (gridSnap.enabled && (changes.x !== undefined || changes.y !== undefined || changes.width !== undefined || changes.height !== undefined || changes.rotation !== undefined)) {
+      const selectedTransformed = nextObjects.filter((object) => selectedIds.includes(object.id))
+      const transformedBounds = new AxisAlignedBoundingBox(selectedTransformed)
+      const deltaX = snapToGrid(transformedBounds.getMinX(), gridSnap.spacing) - transformedBounds.getMinX()
+      const deltaY = snapToGrid(transformedBounds.getMinY(), gridSnap.spacing) - transformedBounds.getMinY()
+      nextObjects = nextObjects.map((object) => selectedIds.includes(object.id)
+        ? { ...object, x: object.x + deltaX, y: object.y + deltaY }
+        : object)
+    }
+
     if (live) {
       updateProjectLive((current) => ({ stock: current.stock, objects: nextObjects }))
     } else {
       setProject({ stock, objects: nextObjects })
     }
-  }, [objects, selectedIds, selectedObjects, setProject, stock, updateProjectLive])
+  }, [gridSnap, objects, selectedIds, selectedObjects, setProject, stock, updateProjectLive])
 
   const deleteSelected = useCallback(() => {
     if (selectedIds.length === 0) return
@@ -85,13 +98,19 @@ export function useSelection({ objects, stock, setProject, updateProjectLive }: 
   const alignSelected = useCallback((alignment: Alignment) => {
     if (selectedObjects.length < 2) return
 
-    const alignedObjects = new AxisAlignedBoundingBox(selectedObjects.map((object) => ({ ...object }))).align(alignment)
+    let alignedObjects = new AxisAlignedBoundingBox(selectedObjects.map((object) => ({ ...object }))).align(alignment)
+    if (gridSnap.enabled) {
+      const alignedBounds = new AxisAlignedBoundingBox(alignedObjects)
+      const deltaX = snapToGrid(alignedBounds.getMinX(), gridSnap.spacing) - alignedBounds.getMinX()
+      const deltaY = snapToGrid(alignedBounds.getMinY(), gridSnap.spacing) - alignedBounds.getMinY()
+      alignedObjects = alignedObjects.map((object) => ({ ...object, x: object.x + deltaX, y: object.y + deltaY }))
+    }
     const alignedById = new Map(alignedObjects.map((object) => [object.id, object]))
     setProject({
       stock,
       objects: objects.map((object) => alignedById.get(object.id) ?? object),
     })
-  }, [objects, selectedObjects, setProject, stock])
+  }, [gridSnap, objects, selectedObjects, setProject, stock])
 
   return {
     selectedIds,

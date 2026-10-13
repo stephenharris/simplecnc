@@ -3,6 +3,8 @@ import { commitHistory, cloneProjectSnapshot, createHistoryState, pushHistory, r
 import type { HistoryState, ProjectSnapshot } from '../utils/history'
 import { loadProjectFromStorage } from '../utils/project'
 import type { Point, Stock, SvgObject } from '../types/cnc'
+import type { GridSnapSettings } from '../utils/grid'
+import { snapToGrid } from '../utils/grid'
 
 const defaultStock: Stock = { width: 400, height: 300, depth: 12 }
 
@@ -63,20 +65,38 @@ export function useProject() {
     updateStock({ width, height })
   }, [updateStock])
 
-  const moveObjects = useCallback((ids: number[], delta: Point, startPositions?: Record<number, Point>) => {
-    updateProjectLive((current) => ({
-      stock: current.stock,
-      objects: current.objects.map((object) => {
-        if (!ids.includes(object.id)) return object
+  const moveObjects = useCallback((
+    ids: number[],
+    delta: Point,
+    startPositions?: Record<number, Point>,
+    gridSnap?: GridSnapSettings,
+  ) => {
+    updateProjectLive((current) => {
+      const movingObjects = current.objects.filter((object) => ids.includes(object.id))
+      if (movingObjects.length === 0) return current
 
-        const start = startPositions?.[object.id] ?? { x: object.x, y: object.y }
-        return {
-          ...object,
-          x: start.x + delta.x,
-          y: start.y + delta.y,
-        }
-      }),
-    }))
+      const startX = Math.min(...movingObjects.map((object) => startPositions?.[object.id]?.x ?? object.x))
+      const startY = Math.min(...movingObjects.map((object) => startPositions?.[object.id]?.y ?? object.y))
+      const deltaX = gridSnap?.enabled
+        ? snapToGrid(startX + delta.x, gridSnap.spacing) - startX
+        : delta.x
+      const deltaY = gridSnap?.enabled
+        ? snapToGrid(startY + delta.y, gridSnap.spacing) - startY
+        : delta.y
+
+      return {
+        stock: current.stock,
+        objects: current.objects.map((object) => {
+          if (!ids.includes(object.id)) return object
+          const start = startPositions?.[object.id] ?? { x: object.x, y: object.y }
+          return {
+            ...object,
+            x: start.x + deltaX,
+            y: start.y + deltaY,
+          }
+        }),
+      }
+    })
   }, [updateProjectLive])
 
   return {

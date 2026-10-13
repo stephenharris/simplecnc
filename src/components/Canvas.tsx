@@ -4,12 +4,16 @@ import './Canvas.css'
 import { AxisAlignedBoundingBox } from '../utils/geometry'
 import { getDepthColor } from '../utils/color'
 import { Grid } from './Grid'
+import type { GridSnapSettings } from '../utils/grid'
 
 type CanvasProps = {
   objects: SvgObject[]
   selectedIds: number[]
   stock: Stock
   zoom: number
+  gridSnap: GridSnapSettings
+  onGridSnapEnabledChange: (enabled: boolean) => void
+  onGridSnapSpacingChange: (spacing: number) => void
   onZoomChange: (zoom: number) => void
   onSelect: (id: number, additive: boolean) => void
   onGestureStart: () => void
@@ -18,7 +22,7 @@ type CanvasProps = {
   onUpdate: (changes: Partial<SvgObject>, live?: boolean) => void
 }
 
-export function Canvas({ objects, selectedIds, stock, zoom, onZoomChange, onSelect, onGestureStart, onMove, onGestureEnd, onUpdate }: CanvasProps) {
+export function Canvas({ objects, selectedIds, stock, zoom, gridSnap, onGridSnapEnabledChange, onGridSnapSpacingChange, onZoomChange, onSelect, onGestureStart, onMove, onGestureEnd, onUpdate }: CanvasProps) {
 
   const selectedObjects = objects.filter((item) => selectedIds.includes(item.id))
   const axisAlignedBox = new AxisAlignedBoundingBox(selectedObjects);
@@ -120,6 +124,33 @@ export function Canvas({ objects, selectedIds, stock, zoom, onZoomChange, onSele
   return (
     <section className="canvas-area">
       <div className="canvas-toolbar">
+        <div className="grid-snap-control">
+          <label>
+            <input
+              type="checkbox"
+              checked={gridSnap.enabled}
+              onChange={(event) => onGridSnapEnabledChange(event.target.checked)}
+            />
+            Snap to grid
+          </label>
+          <label>
+            Grid (mm)
+            <input
+              aria-label="Grid spacing in millimetres"
+              type="number"
+              min={0.1}
+              max={1000}
+              step={0.1}
+              value={gridSnap.spacing}
+              onChange={(event) => {
+                const spacing = Number(event.target.value)
+                if (Number.isFinite(spacing) && spacing >= 0.1 && spacing <= 1000) {
+                  onGridSnapSpacingChange(spacing)
+                }
+              }}
+            />
+          </label>
+        </div>
         <div className="zoom-control">
           <button type="button" onClick={() => onZoomChange(Math.max(50, zoom - 10))}>−</button>
           <span>{zoom}%</span>

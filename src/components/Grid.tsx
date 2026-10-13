@@ -7,7 +7,8 @@ type GridProps = {
 
 export function Grid({ maxSpan, direction }: GridProps) {
 
-  const numberOfLines = maxSpan / 10;
+  const delta = 10;
+  const numberOfLines = Math.floor(maxSpan / delta)
   const percentage = 100 / numberOfLines;
   return (
     <span>
@@ -15,9 +16,9 @@ export function Grid({ maxSpan, direction }: GridProps) {
   <span 
     key={index} 
     className={`grid-line ${direction}`} 
-    style={{ [direction === 'horizontal' ? 'bottom' : 'left']: `${(index + 1) * percentage}%` }}
+    style={{ [direction === 'horizontal' ? 'bottom' : 'left']: `${Math.min((index + 1) * percentage, 100)}%` }}
   >
-    <span className={ `axis-${direction === 'horizontal' ? 'y' : 'x'}` }>{(index + 1)*10}</span> 
+    <span className={`axis-${direction === 'horizontal' ? 'y' : 'x'}`}>{(index + 1) * delta}</span>
   </span>
   )
 }
