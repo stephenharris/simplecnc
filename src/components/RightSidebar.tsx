@@ -105,10 +105,12 @@ export function RightSidebar({ selectedObjects, stock, onDelete, onUpdate, onAli
                   Operation name
                   <CommitInput type="text" value={selected.operationName} onCommit={(value) => onUpdate({ operationName: value })} />
                 </label>
-                <div className="section-title">CUT OPERATION <span>PATH</span></div>
-                <select className="operation-select" value={selected.operation} onChange={(event) => onUpdate({ operation: event.target.value as CutOperation })}>
-                  {Object.entries(operationLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-                </select>
+                <label className="operation-name-field">
+                  Cut operation
+                  <select className="operation-select" value={selected.operation} onChange={(event) => onUpdate({ operation: event.target.value as CutOperation })}>
+                    {Object.entries(operationLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                  </select>
+                </label>
                 <label className="bit-field">
                   Bit
                   <select className="operation-select" value={selected.bitId} onChange={(event) => onUpdate({ bitId: event.target.value })}>
