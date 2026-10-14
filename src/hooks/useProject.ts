@@ -8,6 +8,14 @@ import { snapToGrid } from '../utils/grid'
 
 const defaultStock: Stock = { width: 400, height: 300, depth: 12 }
 
+const limitObjectDepth = (object: SvgObject, stockDepth: number): SvgObject => ({
+  ...object,
+  cut: { ...object.cut, depth: Math.min(object.cut.depth, stockDepth) },
+  ...(object.groupedObjects
+    ? { groupedObjects: object.groupedObjects.map((member) => limitObjectDepth(member, stockDepth)) }
+    : {}),
+})
+
 const loadInitialProject = (): ProjectSnapshot => {
   const storedProject = loadProjectFromStorage()
   return {
@@ -54,10 +62,7 @@ export function useProject() {
   const updateStock = useCallback((changes: Partial<Stock>) => {
     const nextStock = { ...stock, ...changes }
     const nextObjects = changes.depth !== undefined
-      ? objects.map((object) => ({
-        ...object,
-        cut: { ...object.cut, depth: Math.min(object.cut.depth, nextStock.depth) },
-      }))
+      ? objects.map((object) => limitObjectDepth(object, nextStock.depth))
       : objects
     setProject({ stock: nextStock, objects: nextObjects })
   }, [objects, setProject, stock])

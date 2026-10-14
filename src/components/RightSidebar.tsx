@@ -19,9 +19,11 @@ type RightSidebarProps = {
   onDelete: () => void
   onUpdate: (changes: SvgObjectUpdate) => void
   onAlign: (alignment: Alignment) => void
+  onGroup: () => void
+  onUngroup: () => void
 }
 
-export function RightSidebar({ selectedObjects, stock, onDelete, onUpdate, onAlign }: RightSidebarProps) {
+export function RightSidebar({ selectedObjects, stock, onDelete, onUpdate, onAlign, onGroup, onUngroup }: RightSidebarProps) {
   const [activeTab, setActiveTab] = useState<'transform' | 'cut'>('transform')
   const selected = selectedObjects[0]
   const selectedTool = selected ? getTool(selected.cut.bitId) : undefined
@@ -32,8 +34,14 @@ export function RightSidebar({ selectedObjects, stock, onDelete, onUpdate, onAli
       <div className="panel-heading">
         <div>
           <span className="eyebrow">03 / INSPECTOR</span>
-          <h2>{selectedObjects.length > 1 ? 'Group' : 'Transform'}</h2>
+          <h2>{selectedObjects.length > 1 ? 'Selection' : selected?.groupedObjects ? 'Group' : 'Transform'}</h2>
         </div>
+        {selectedObjects.length > 1 && (
+          <button className="group-action-button" type="button" onClick={onGroup}>Group</button>
+        )}
+        {selectedObjects.length === 1 && selected?.groupedObjects && (
+          <button className="group-action-button" type="button" onClick={onUngroup}>Ungroup</button>
+        )}
         {selectedObjects.length > 0 && (
           <button className="delete-button" type="button" aria-label="Delete selected object" title="Delete selected object" onClick={onDelete}>
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">

@@ -1,6 +1,5 @@
 import type { Contour, Stock } from '../../types/cnc'
-import { toMachinePoint } from '../helpers';
-import { writeToolpath } from '../toolpath-writer';
+import { writeToolpath } from '../toolpath-writer'
 import { GcodeOperation } from './gcode-operation'
 
 export class PocketOperation extends GcodeOperation {
@@ -22,11 +21,7 @@ export class PocketOperation extends GcodeOperation {
   }
 
   private addFinalDepthPass(lines: string[], depth: number, stepOver: number) {
-    const contours = this.pathFlattener
-      .flatten(this.object.pathData)
-      .map((contour) => contour.map((point) => toMachinePoint(point, this.object)))
-
-    const adjustedContours = this.contourOffsetter.pocket(contours, this.toolDiameter, stepOver / 100)
+    const adjustedContours = this.contourOffsetter.pocket(this.getContours(), this.toolDiameter, stepOver / 100)
     writeToolpath(lines, this.object, depth, adjustedContours)
   }
   

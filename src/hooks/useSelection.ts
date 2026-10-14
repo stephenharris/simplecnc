@@ -5,6 +5,7 @@ import type { Stock, SvgObject, SvgObjectUpdate } from '../types/cnc'
 import type { ProjectSnapshot } from '../utils/history'
 import type { GridSnapSettings } from '../utils/grid'
 import { snapToGrid } from '../utils/grid'
+import { createGroupedObject, scaleGroupedObjects, ungroupObject } from '../utils/groups'
 
 type UseSelectionOptions = {
   objects: SvgObject[]
@@ -16,7 +17,9 @@ type UseSelectionOptions = {
 
 export function useSelection({ objects, stock, gridSnap, setProject, updateProjectLive }: UseSelectionOptions) {
   const [selectedIds, setSelectedIds] = useState<number[]>([])
-  const selectedObjects = objects.filter((object) => selectedIds.includes(object.id))
+  const selectedObjects = selectedIds
+    .map((id) => objects.find((object) => object.id === id))
+    .filter((object): object is SvgObject => object !== undefined)
 
   const select = useCallback((id: number, additive: boolean) => {
     setSelectedIds((current) => {
@@ -67,6 +70,14 @@ export function useSelection({ objects, stock, gridSnap, setProject, updateProje
         }
       }
 
+      if (object.groupedObjects && (nextObject.width !== object.width || nextObject.height !== object.height)) {
+        nextObject.groupedObjects = scaleGroupedObjects(
+          object.groupedObjects,
+          nextObject.width / object.width,
+          nextObject.height / object.height,
+        )
+      }
+
       return nextObject
     })
 
@@ -110,6 +121,28 @@ export function useSelection({ objects, stock, gridSnap, setProject, updateProje
     })
   }, [gridSnap, objects, selectedObjects, setProject, stock])
 
+  const groupSelected = useCallback(() => {
+    if (selectedObjects.length < 2) return
+    const groupedObject = createGroupedObject(selectedObjects, objects)
+    const selected = new Set(selectedIds)
+    setProject({
+      stock,
+      objects: [...objects.filter((object) => !selected.has(object.id)), groupedObject],
+    })
+    setSelectedIds([groupedObject.id])
+  }, [objects, selectedIds, selectedObjects, setProject, stock])
+
+  const ungroupSelected = useCallback(() => {
+    if (selectedObjects.length !== 1 || !selectedObjects[0].groupedObjects) return
+    const selected = selectedObjects[0]
+    const members = ungroupObject(selected)
+    setProject({
+      stock,
+      objects: [...objects.filter((object) => object.id !== selected.id), ...members],
+    })
+    setSelectedIds(members.map((object) => object.id))
+  }, [objects, selectedObjects, setProject, stock])
+
   return {
     selectedIds,
     selectedObjects,
@@ -118,5 +151,7 @@ export function useSelection({ objects, stock, gridSnap, setProject, updateProje
     updateSelected,
     deleteSelected,
     alignSelected,
+    groupSelected,
+    ungroupSelected,
   }
 }

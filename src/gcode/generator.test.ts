@@ -3,6 +3,7 @@ import JSZip from 'jszip'
 import { createGcodeZip, generateGcode, isClosedContour, sanitizeOperationName } from './generator'
 import { toMachinePoint } from './helpers'
 import { createImportedObjects } from '../utils/svg'
+import { createGroupedObject, ungroupObject } from '../utils/groups'
 import type { CutSettings, Stock, SvgObject } from '../types/cnc'
 
 const stock: Stock = { width: 100, height: 100, depth: 2 }
@@ -61,6 +62,48 @@ describe('gcode generator', () => {
     expect(gcode).toContain('G1 Z-1.200 F250')
     expect(gcode).toContain('G0 Z5.000')
     expect(gcode.endsWith('M2\n')).toBe(true)
+  })
+
+  it('generates one operation for a group using the first object settings', () => {
+    const first = makeObject({
+      cut: { operation: 'cut-outside', feedRate: 600, depthPerPass: 0.7 },
+    })
+    const second = makeObject({
+      id: 2,
+      name: 'second',
+      operationName: 'Second operation',
+      x: 50,
+      cut: { operation: 'pocket', feedRate: 1200, depthPerPass: 0.2 },
+    })
+    const group = createGroupedObject([first, second], [first, second])
+    const gcode = generateGcode(group, stock)
+
+    expect(group.operationName).toBe(first.operationName)
+    expect(group.name).toBe(first.name)
+    expect(group.cut).toEqual(first.cut)
+    expect(gcode.match(/; SimpleCNC/g)).toHaveLength(1)
+    expect(gcode).toContain('; Stepdown: 0.70 mm')
+    expect(gcode).toContain('G1 X31.588 Y40.000')
+    expect(gcode).toContain('G1 X61.588 Y40.000')
+    expect(gcode).not.toContain('F1200')
+  })
+
+  it('ungroups a moved and rotated group back into transformed constituent objects', () => {
+    const first = makeObject({ x: 10, y: 20 })
+    const second = makeObject({ id: 2, x: 40, y: 20 })
+    const group = createGroupedObject([first, second], [first, second])
+    group.x += 5
+    group.y += 7
+    group.rotation = 90
+
+    const members = ungroupObject(group)
+
+    expect(members[0].x).toBeCloseTo(30)
+    expect(members[0].y).toBeCloseTo(12)
+    expect(members[0].rotation).toBe(90)
+    expect(members[1].x).toBeCloseTo(30)
+    expect(members[1].y).toBeCloseTo(42)
+    expect(members[1].rotation).toBe(90)
   })
 
   it('uses each cut operation’s feed, plunge, and depth-per-pass settings', () => {

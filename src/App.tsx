@@ -108,6 +108,8 @@ function App() {
           onDelete={selection.deleteSelected}
           onUpdate={selection.updateSelected}
           onAlign={selection.alignSelected}
+          onGroup={selection.groupSelected}
+          onUngroup={selection.ungroupSelected}
         />
       </div>
     </main>

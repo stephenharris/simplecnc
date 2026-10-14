@@ -13,9 +13,17 @@ export type HistoryState = {
 
 const snapshotsEqual = (left: ProjectSnapshot, right: ProjectSnapshot) => JSON.stringify(left) === JSON.stringify(right)
 
+const cloneObject = (object: SvgObject): SvgObject => ({
+  ...object,
+  cut: { ...object.cut },
+  ...(object.groupedObjects
+    ? { groupedObjects: object.groupedObjects.map(cloneObject) }
+    : {}),
+})
+
 export const cloneProjectSnapshot = (snapshot: ProjectSnapshot): ProjectSnapshot => ({
   stock: { ...snapshot.stock },
-  objects: snapshot.objects.map((object) => ({ ...object })),
+  objects: snapshot.objects.map(cloneObject),
 })
 
 export const createHistoryState = (initial: ProjectSnapshot): HistoryState => ({

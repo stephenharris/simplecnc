@@ -31,6 +31,7 @@ export type SvgObject = {
   cut: CutSettings
   lockedProportions: boolean
   svg: string
+  groupedObjects?: SvgObject[]
 }
 
 export type SvgObjectUpdate = Omit<Partial<SvgObject>, 'cut'> & {

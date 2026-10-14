@@ -228,17 +228,38 @@ export function Canvas({ objects, selectedIds, stock, zoom, gridSnap, onGridSnap
                   transform: `rotate(${-object.rotation}deg)`,
                }}
               >
-                <div
-                  className={`operation-${object.cut.operation}`}
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'contain',
-                  }}
-                  dangerouslySetInnerHTML={{ __html: object.svg }}
-                />
+                {object.groupedObjects ? object.groupedObjects.map((member) => (
+                  <div
+                    key={member.id}
+                    style={{
+                      position: 'absolute',
+                      left: `${member.x / object.width * 100}%`,
+                      bottom: `${member.y / object.height * 100}%`,
+                      width: `${member.width / object.width * 100}%`,
+                      height: `${member.height / object.height * 100}%`,
+                      transform: `rotate(${-member.rotation}deg)`,
+                      pointerEvents: 'none',
+                    }}
+                  >
+                    <div
+                      className={`operation-${object.cut.operation}`}
+                      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
+                      dangerouslySetInnerHTML={{ __html: member.svg }}
+                    />
+                  </div>
+                )) : (
+                  <div
+                    className={`operation-${object.cut.operation}`}
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'contain',
+                    }}
+                    dangerouslySetInnerHTML={{ __html: object.svg }}
+                  />
+                )}
 
               </div>
             ))}

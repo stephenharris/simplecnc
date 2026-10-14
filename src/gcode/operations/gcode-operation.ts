@@ -4,6 +4,7 @@ import { forEachDepthPass } from '../depth-passes'
 import { toMachinePoint } from '../helpers'
 import { SvgPathFlattener } from '../path-flattener'
 import { writeToolpath } from '../toolpath-writer'
+import { getGroupMembersInWorldSpace } from '../../utils/groups'
 
 export abstract class GcodeOperation {
   protected readonly object: SvgObject
@@ -21,10 +22,15 @@ export abstract class GcodeOperation {
   }
 
   protected addDepthPass(lines: string[], depth: number) {
-    const contours = this.pathFlattener
-      .flatten(this.object.pathData)
-      .map((contour) => contour.map((point) => toMachinePoint(point, this.object)))
-    writeToolpath(lines, this.object, depth, this.adjustContours(contours))
+    writeToolpath(lines, this.object, depth, this.adjustContours(this.getContours()))
+  }
+
+  protected getContours(): Contour[] {
+    return getGroupMembersInWorldSpace(this.object).flatMap((member) =>
+      this.pathFlattener
+        .flatten(member.pathData)
+        .map((contour) => contour.map((point) => toMachinePoint(point, member))),
+    )
   }
 
   protected abstract adjustContours(contours: Contour[]): Contour[]
