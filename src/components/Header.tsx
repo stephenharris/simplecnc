@@ -2,7 +2,7 @@ import './Header.css'
 
 type HeaderProps = {
   onGenerateGCode: () => void
-  onSaveProject: () => void
+  onExportProject: () => void
   onImportProject: () => void
   onNewProject: () => void
   onUndo: () => void
@@ -11,7 +11,7 @@ type HeaderProps = {
   canRedo: boolean
 }
 
-export function Header({ onGenerateGCode, onSaveProject, onImportProject, onNewProject, onUndo, onRedo, canUndo, canRedo }: HeaderProps) {
+export function Header({ onGenerateGCode, onExportProject, onImportProject, onNewProject, onUndo, onRedo, canUndo, canRedo }: HeaderProps) {
   return (
     <header className="topbar">
       <div className="brand">
@@ -34,8 +34,8 @@ export function Header({ onGenerateGCode, onSaveProject, onImportProject, onNewP
         <button className="secondary-button" type="button" onClick={onImportProject}>
           Import project
         </button>
-        <button className="secondary-button" type="button" onClick={onSaveProject}>
-          Save project
+        <button className="secondary-button" type="button" onClick={onExportProject}>
+          Export project
         </button>
         <button className="export-button" type="button" onClick={onGenerateGCode}>
           Generate G-code <span>→</span>

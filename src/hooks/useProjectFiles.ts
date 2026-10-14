@@ -19,7 +19,7 @@ type UseProjectFilesOptions = {
 }
 
 export function useProjectFiles({ stock, objects, setProject, clearSelection }: UseProjectFilesOptions) {
-  const saveProject = useCallback(() => {
+  const exportProject = useCallback(() => {
     const payload = serializeProject({ stock, objects })
     const blob = new Blob([payload], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
@@ -44,5 +44,5 @@ export function useProjectFiles({ stock, objects, setProject, clearSelection }: 
     })
   }, [clearSelection, setProject])
 
-  return { saveProject, importProject }
+  return { exportProject, importProject }
 }

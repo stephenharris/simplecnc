@@ -32,7 +32,7 @@ function App() {
     setProject: project.setProject,
     setSelectedIds: selection.setSelectedIds,
   })
-  const { saveProject, importProject } = useProjectFiles({
+  const { exportProject, importProject } = useProjectFiles({
     stock: project.stock,
     objects: project.objects,
     setProject: project.setProject,
@@ -69,7 +69,7 @@ function App() {
         onGenerateGCode={downloadGcode}
         onImportProject={() => projectInput.current?.click()}
         onNewProject={newProject}
-        onSaveProject={saveProject}
+        onExportProject={exportProject}
         onUndo={project.undo}
         onRedo={project.redo}
         canUndo={project.history.past.length > 0}
