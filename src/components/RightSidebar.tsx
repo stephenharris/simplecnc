@@ -97,52 +97,50 @@ export function RightSidebar({ selectedObjects, stock, onDelete, onUpdate, onAli
           ) : (
             <div role="tabpanel" aria-label="Cut settings">
               <div className="inspector-section">
+                
                 <label className="operation-name-field">
                   Operation name
                   <CommitInput type="text" value={selected.operationName} onCommit={(value) => onUpdate({ operationName: value })} />
                 </label>
-                <label className="operation-name-field">
+                
+                <label className="operation-type-field">
                   Cut operation
                   <select className="operation-select" value={selected.cut.operation} onChange={(event) => onUpdate({ cut: { operation: event.target.value as CutOperation } })}>
                     {Object.entries(operationLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                   </select>
                 </label>
+                
                 <label className="bit-field">
-                  Bit
+                  <span>Bit <small>Diameter {selectedTool?.diameter ?? toolList[0]?.diameter ?? 0} mm</small></span>
                   <select className="operation-select" value={selected.cut.bitId} onChange={(event) => onUpdate({ cut: { bitId: event.target.value } })}>
                     {toolList.map((tool) => <option key={tool.id} value={tool.id}>{tool.description} ({tool.diameter} mm)</option>)}
                   </select>
-                  <small>Diameter {selectedTool?.diameter ?? toolList[0]?.diameter ?? 0} mm</small>
                 </label>
+
                 <label className="depth-field">
-                  Cut Depth
+                  <span>Cut Depth <small>mm</small></span>
                   <CommitInput type="number" min={0} max={stock.depth} step={0.1} value={String(selected.cut.depth)} onCommit={(value) => onUpdate({ cut: { depth: Math.min(stock.depth, Math.max(0, Number(value))) } })} />
-                  <small>Max {stock.depth} mm, based on stock material</small>
                 </label>
 
-                <label className="depth-field">
-                  Feed rate
+                <label className="feed-rate-field">
+                  <span>Feed rate<small>mm/min</small></span>
                   <CommitInput type="number" min={1} step={1} value={String(selected.cut.feedRate)} onCommit={(value) => onUpdate({ cut: { feedRate: Math.max(1, Number(value)) } })} />
-                  <small>mm/min</small>
                 </label>
 
-                <label className="depth-field">
-                  Plunge rate
+                <label className="plunge-rate-field">
+                  <span>Plunge rate<small>mm/min</small></span>
                   <CommitInput type="number" min={1} step={1} value={String(selected.cut.plungeRate)} onCommit={(value) => onUpdate({ cut: { plungeRate: Math.max(1, Number(value)) } })} />
-                  <small>mm/min</small>
                 </label>
 
-                <label className="depth-field">
-                  Depth per pass
+                <label className="depth-per-pass-field">
+                  <span>Depth per pass<small>mm per pass</small></span>
                   <CommitInput type="number" min={0.1} max={stock.depth} step={0.1} value={String(selected.cut.depthPerPass)} onCommit={(value) => onUpdate({ cut: { depthPerPass: Math.min(stock.depth, Math.max(0.1, Number(value))) } })} />
-                  <small>mm per pass</small>
                 </label>
 
                 {selected.cut.operation === 'pocket' && (
                    <label className="depth-field">
-                      Step over
+                      <span>Step over <small>Percentage of bit diameter</small></span>
                       <CommitInput type="number" min={0.1} max={100} step={0.1} value={String(selected.cut.stepOver ?? 50)} onCommit={(value) => onUpdate({ cut: { stepOver: Math.min(100, Math.max(0.1, Number(value))) } })} />
-                      <small>Percentage of bit diameter</small>
                     </label>
                 )}
               </div>
@@ -155,9 +153,8 @@ export function RightSidebar({ selectedObjects, stock, onDelete, onUpdate, onAli
                     </label>
                     {selected.cut.finalPassStepOver && (
                       <label className="final-pass-step-over">
-                        Final pass step over
+                        <span>Step over<small>% of bit diameter</small></span>
                         <CommitInput type="number" min={0.1} max={100} step={0.1} value={String(selected.cut.finalPassStepOver ?? 50)} onCommit={(value) => onUpdate({ cut: { finalPassStepOver: Math.min(100, Math.max(0.1, Number(value))) } })} />
-                        <small>Percentage of bit diameter</small>
                       </label>
                     )}
                   </div>

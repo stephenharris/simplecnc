@@ -124,6 +124,10 @@
   letter-spacing: .5px;
   margin-top: 1em;
 }
+.inspector label span {
+  display: flex;
+  justify-content: space-between;
+}
 
 .sidebar select,
 .sidebar input,
