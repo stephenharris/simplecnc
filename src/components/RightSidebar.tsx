@@ -45,10 +45,6 @@ export function RightSidebar({ selectedObjects, stock, onDelete, onUpdate, onAli
 
       {selectedObjects.length > 0 ? (
         <>
-          <div className="selected-file">
-            <span className="file-icon">⌁</span>
-            <span>{selectedObjects.length > 1 ? `${selectedObjects.length} objects selected` : selected.name}<small>{selectedObjects.length > 1 ? 'SVG vector group' : 'SVG vector object'}</small></span>
-          </div>
           {selectedObjects.length === 1 && (
             <div className="inspector-tabs" role="tablist" aria-label="Object settings">
               <button className={activeTab === 'transform' ? 'active' : ''} type="button" role="tab" aria-selected={activeTab === 'transform'} onClick={() => setActiveTab('transform')}>Transform</button>
@@ -143,14 +139,30 @@ export function RightSidebar({ selectedObjects, stock, onDelete, onUpdate, onAli
                 </label>
 
                 {selected.cut.operation === 'pocket' && (
-                  <label className="depth-field">
-                    Step over
-                    <CommitInput type="number" min={0.1} max={100} step={0.1} value={String(selected.cut.stepOver ?? 50)} onCommit={(value) => onUpdate({ cut: { stepOver: Math.min(100, Math.max(0.1, Number(value))) } })} />
-                    <small>Percentage of bit diameter</small>
-                  </label>
+                   <label className="depth-field">
+                      Step over
+                      <CommitInput type="number" min={0.1} max={100} step={0.1} value={String(selected.cut.stepOver ?? 50)} onCommit={(value) => onUpdate({ cut: { stepOver: Math.min(100, Math.max(0.1, Number(value))) } })} />
+                      <small>Percentage of bit diameter</small>
+                    </label>
+                )}
+              </div>
+
+                {selected.cut.operation === 'pocket' && (
+                  <div className="inspector-section">
+                    <label className="final-pass">
+                      Final pass?
+                      <input type="checkbox" checked={!!selected.cut.finalPassStepOver} onChange={(event) => onUpdate({ cut: { finalPassStepOver: event.target.checked ? 10 : undefined } })} />
+                    </label>
+                    {selected.cut.finalPassStepOver && (
+                      <label className="final-pass-step-over">
+                        Final pass step over
+                        <CommitInput type="number" min={0.1} max={100} step={0.1} value={String(selected.cut.finalPassStepOver ?? 50)} onCommit={(value) => onUpdate({ cut: { finalPassStepOver: Math.min(100, Math.max(0.1, Number(value))) } })} />
+                        <small>Percentage of bit diameter</small>
+                      </label>
+                    )}
+                  </div>
                 )}
 
-              </div>
             </div>
           )}
         </>

@@ -139,6 +139,28 @@ describe('gcode generator', () => {
     expect(contourStarts[0].y).toBeLessThan(contourStarts.at(-1)?.y ?? 0)
   })
 
+  it('adds a final pocket pass at full depth with a tighter step-over', () => {
+    const pocket = generateGcode(makeObject({
+      cut: {
+        operation: 'pocket',
+        depth: 1.2,
+        depthPerPass: 0.7,
+        stepOver: 50,
+        finalPassStepOver: 10,
+      },
+      pathData: 'M 0 0 L 15 0 L 15 15 L 0 15 Z',
+      width: 15,
+      height: 15,
+      viewBoxWidth: 15,
+      viewBoxHeight: 15,
+    }), stock)
+
+    expect(pocket).toContain('; Final pass with step over 10%')
+    expect((pocket.match(/; Final pass with step over 10%/g) ?? []).length).toBe(1)
+    expect(pocket).toContain('G1 Z-1.200 F250')
+    expect(pocket.match(/G1 Z-1\.200 F250/g)?.length).toBeGreaterThanOrEqual(1)
+  })
+
   it('creates one zip file per object', async () => {
     const blob = await createGcodeZip([makeObject(), makeObject({ id: 2, operationName: 'Pocket base' }), makeObject({ id: 3, operationName: 'Engrave label' })], stock)
     const zip = await JSZip.loadAsync(blob)

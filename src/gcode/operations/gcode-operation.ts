@@ -9,7 +9,7 @@ export abstract class GcodeOperation {
   protected readonly object: SvgObject
   protected readonly toolDiameter: number
   protected readonly contourOffsetter = new ContourOffsetter()
-  private readonly pathFlattener = new SvgPathFlattener()
+  protected readonly pathFlattener = new SvgPathFlattener()
 
   constructor(object: SvgObject, toolDiameter: number) {
     this.object = object
