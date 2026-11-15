@@ -1,19 +1,21 @@
 import type { Contour, Stock, SvgObject, Tool } from '../../types/cnc'
 import { ContourOffsetter } from '../contour-offsetter'
 import { forEachDepthPass } from '../depth-passes'
-import { toMachinePoint } from '../helpers'
+import { getObjectPathTransform, toMachinePoint } from '../helpers'
 import { SvgPathFlattener } from '../path-flattener'
 import { writeToolpath } from '../toolpath-writer'
 
 export abstract class GcodeOperation {
   protected readonly object: SvgObject
   protected readonly tool: Tool
+  protected readonly pathTransform: ReturnType<typeof getObjectPathTransform>
   protected readonly contourOffsetter = new ContourOffsetter()
   protected readonly pathFlattener = new SvgPathFlattener()
 
   constructor(object: SvgObject, tool: Tool) {
     this.object = object
     this.tool = tool
+    this.pathTransform = getObjectPathTransform(object)
   }
 
   generateDepthPasses(lines: string[], stock: Stock) {
@@ -23,7 +25,7 @@ export abstract class GcodeOperation {
   protected addDepthPass(lines: string[], depth: number) {
     const contours = this.pathFlattener
       .flatten(this.object.pathData)
-      .map((contour) => contour.map((point) => toMachinePoint(point, this.object)))
+      .map((contour) => contour.map((point) => toMachinePoint(point, this.object, this.pathTransform)))
     writeToolpath(lines, this.object, depth, this.adjustContours(contours, depth))
   }
 

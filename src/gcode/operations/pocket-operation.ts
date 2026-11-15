@@ -24,7 +24,7 @@ export class PocketOperation extends GcodeOperation {
   private addFinalDepthPass(lines: string[], depth: number, stepOver: number) {
     const contours = this.pathFlattener
       .flatten(this.object.pathData)
-      .map((contour) => contour.map((point) => toMachinePoint(point, this.object)))
+      .map((contour) => contour.map((point) => toMachinePoint(point, this.object, this.pathTransform)))
 
     const adjustedContours = this.contourOffsetter.pocket(contours, this.cuttingDiameterAtDepth(depth), stepOver / 100)
     writeToolpath(lines, this.object, depth, adjustedContours)

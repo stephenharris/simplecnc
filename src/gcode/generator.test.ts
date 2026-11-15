@@ -104,6 +104,31 @@ describe('gcode generator', () => {
     expect(generateGcode(snowmanBody, { width: 400, height: 300, depth: 12 })).toContain('G0 X30.000 Y185.121')
   })
 
+  it('applies imported SVG group transforms before mapping the path to the object size', () => {
+    const transformedFlower = makeObject({
+      pathData: 'M 4 2 L 104 2 L 104 202 L 4 202 Z',
+      viewBoxWidth: 10,
+      viewBoxHeight: 20,
+      pathBoundsWidth: 10,
+      pathBoundsHeight: 20,
+      width: 10,
+      height: 20,
+      x: 20,
+      y: 30,
+      svg: '<svg data-path-bounds="6 8 10 20"><g transform="matrix(0.1 0 0 0.1 5 7)"><path /></g></svg>',
+    })
+    const gcode = generateGcode(transformedFlower, stock)
+    const points = gcode.split('\n')
+      .filter((line) => line.startsWith('G1 X'))
+      .map((line) => line.match(/X(-?\d+(?:\.\d+)?) Y(-?\d+(?:\.\d+)?)/)!)
+      .map((match) => ({ x: Number(match[1]), y: Number(match[2]) }))
+
+    expect(Math.max(...points.map((point) => point.x)) - Math.min(...points.map((point) => point.x))).toBe(10)
+    expect(Math.max(...points.map((point) => point.y)) - Math.min(...points.map((point) => point.y))).toBe(20)
+    expect(Math.min(...points.map((point) => point.x))).toBe(20)
+    expect(Math.max(...points.map((point) => point.y))).toBe(50)
+  })
+
   it('normalizes imported path coordinates to a local bounding-box origin', () => {
     const [object] = createImportedObjects([
       `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 300" data-parent-viewbox="0 0 200 300" data-path-bounds="12.836 5.144 173.659 290.243"><path d="M 12.836 5.144 L 186.495 295.387 Z" /></svg>`,
