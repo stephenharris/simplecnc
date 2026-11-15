@@ -5,9 +5,9 @@ import { GcodeOperation } from './gcode-operation'
 
 export class PocketOperation extends GcodeOperation {
   
-  protected adjustContours(contours: Contour[]): Contour[] {
+  protected adjustContours(contours: Contour[], depth: number): Contour[] {
     const stepOver = this.object.cut.stepOver ?? 50;
-    return this.contourOffsetter.pocket(contours, this.toolDiameter, stepOver / 100)
+    return this.contourOffsetter.pocket(contours, this.cuttingDiameterAtDepth(depth), stepOver / 100)
   }
 
   generateDepthPasses(lines: string[], stock: Stock) {
@@ -26,7 +26,7 @@ export class PocketOperation extends GcodeOperation {
       .flatten(this.object.pathData)
       .map((contour) => contour.map((point) => toMachinePoint(point, this.object)))
 
-    const adjustedContours = this.contourOffsetter.pocket(contours, this.toolDiameter, stepOver / 100)
+    const adjustedContours = this.contourOffsetter.pocket(contours, this.cuttingDiameterAtDepth(depth), stepOver / 100)
     writeToolpath(lines, this.object, depth, adjustedContours)
   }
   

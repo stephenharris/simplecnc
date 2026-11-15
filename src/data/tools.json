@@ -18,6 +18,7 @@
     "shape": "conical",
     "length": 9.00316,
     "diameter": 3.175,
+    "angle": 20,
     "description": "20deg v-bit"
   },
   "4": {

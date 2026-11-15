@@ -45,7 +45,8 @@ export class SvgPathFlattener {
   }
 
   private addPoint(point: Point) {
-    if (!this.contour.length || Math.hypot(point.x - this.current.x, point.y - this.current.y) > POINT_TOLERANCE) this.contour.push(point)
+    const lastPoint = this.contour.at(-1)
+    if (!lastPoint || Math.hypot(point.x - lastPoint.x, point.y - lastPoint.y) > POINT_TOLERANCE) this.contour.push(point)
     this.current = point
   }
 

@@ -30,7 +30,7 @@ export const generateGcode = (object: SvgObject, stock: Stock): string => {
     `T${object.cut.bitId} M6`,
     `G0 Z${DEFAULT_SAFE_Z.toFixed(3)}`
   ]
-  createOperation(object, toolDiameter).generateDepthPasses(lines, stock)
+  createOperation(object, bit).generateDepthPasses(lines, stock)
   lines.push(`G0 Z${DEFAULT_SAFE_Z.toFixed(3)}`, 'G0 X0 Y0', 'M2')
   return `${lines.join('\n')}\n`
 }

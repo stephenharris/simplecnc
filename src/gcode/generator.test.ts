@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import JSZip from 'jszip'
 import { createGcodeZip, generateGcode, isClosedContour, sanitizeOperationName } from './generator'
 import { toMachinePoint } from './helpers'
+import { SvgPathFlattener } from './path-flattener'
 import { createImportedObjects } from '../utils/svg'
 import type { CutSettings, Stock, SvgObject } from '../types/cnc'
 
@@ -45,6 +46,12 @@ describe('gcode generator', () => {
   it('rejects open and underspecified contours', () => {
     expect(isClosedContour([{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }, { x: 0, y: 10 }])).toBe(false)
     expect(isClosedContour([{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 0, y: 0 }])).toBe(false)
+  })
+
+  it('retains the endpoint of a short curve that closes a contour', () => {
+    const [contour] = new SvgPathFlattener().flatten('M 0 0 L 1 0 Q 0.1 0.1 0 0 Z')
+
+    expect(isClosedContour(contour)).toBe(true)
   })
 
   it('sanitizes operation names for filenames', () => {
@@ -137,6 +144,28 @@ describe('gcode generator', () => {
     expect(contourStarts.length).toBeGreaterThan(1)
     expect(contourStarts[0].x).toBeLessThan(contourStarts.at(-1)?.x ?? 0)
     expect(contourStarts[0].y).toBeLessThan(contourStarts.at(-1)?.y ?? 0)
+  })
+
+  it('uses the conical tool width at each depth when pocketing', () => {
+    const pocket = generateGcode(makeObject({
+      cut: { operation: 'pocket', bitId: '3', depth: 1.2, depthPerPass: 0.7 },
+    }), stock)
+
+    expect(pocket).toContain('G1 X20.123 Y39.877 F600')
+    expect(pocket).toContain('G1 X20.212 Y39.788 F600')
+    expect(pocket).not.toContain('X21.588')
+  })
+
+  it('uses the conical tool width at the cut depth for inside and outside contours', () => {
+    const inside = generateGcode(makeObject({
+      cut: { operation: 'cut-inside', bitId: '3' },
+    }), stock)
+    const outside = generateGcode(makeObject({
+      cut: { operation: 'cut-outside', bitId: '3' },
+    }), stock)
+
+    expect(inside).toContain('G1 X20.123 Y39.877 F600')
+    expect(outside).toContain('G1 X19.877 Y40.000 F600')
   })
 
   it('adds a final pocket pass at full depth with a tighter step-over', () => {

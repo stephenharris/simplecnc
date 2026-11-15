@@ -49,3 +49,13 @@ export type Point = {
 }
 
 export type Contour = Point[]
+
+export type Tool = {
+  id: string
+  units: string
+  shape: string
+  length: number
+  diameter: number
+  angle?: number
+  description: string
+}
