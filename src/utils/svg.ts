@@ -1,5 +1,7 @@
 import { makeAbsolute, parseSVG } from 'svg-path-parser'
 import type { SvgObject } from '../types/cnc'
+import { getSvgTransform } from '../gcode/helpers'
+import { SvgPathFlattener } from '../gcode/path-flattener'
 import bits from '../data/tools.json'
 import { createCutSettings } from './cutSettings'
 
@@ -114,11 +116,34 @@ const normalizeImportedSvg = (svg: string, pathBounds: number[] | undefined, loc
 
   let normalized = svg.replace(/viewBox=["'][^"']+["']/i, `viewBox="0 0 ${pathBounds[2]} ${pathBounds[3]}"`)
   normalized = normalized.replace(/\s(?:width|height)=["'][^"']+["']/gi, '')
-  normalized = normalized.replace(/<path\b([^>]*)\bd=["'][^"']*["']/i, `<path$1 d="${localPathData}"`)
-  return normalized
+  if (!/<(?:g|path)\b[^>]*\btransform=["']/i.test(normalized)) {
+    return normalized.replace(/<path\b([^>]*)\bd=["'][^"']*["']/i, `<path$1 d="${localPathData}"`)
+  }
+  return normalizeSvgPreview(normalized)
 }
 
 const readImportMetadata = (svg: string, name: string) => svg.match(new RegExp(`${name}="([^"]+)"`, 'i'))?.[1].trim().split(/\s+/).map(Number)
+
+export const normalizeSvgPreview = (svg: string) => {
+  if (!/<(?:g|path)\b[^>]*\btransform=["']/i.test(svg) || /\bdata-preview-normalized=["']true["']/i.test(svg)) {
+    return svg
+  }
+  const pathData = getPathData(svg)
+  if (!pathData) throw new Error('Could not find a path to normalize in the SVG preview.')
+  const transform = getSvgTransform(svg)
+  const points = new SvgPathFlattener().flatten(pathData).flat()
+  if (points.length === 0) throw new Error('Could not find path points to normalize in the SVG preview.')
+  const transformedPoints = points.map((point) => ({
+    x: transform.a * point.x + transform.c * point.y + transform.e,
+    y: transform.b * point.x + transform.d * point.y + transform.f,
+  }))
+  const boundsX = Math.min(...transformedPoints.map((point) => point.x))
+  const boundsY = Math.min(...transformedPoints.map((point) => point.y))
+  if (!Number.isFinite(boundsX) || !Number.isFinite(boundsY)) throw new Error('SVG preview path bounds must be finite numbers.')
+
+  return svg.replace(/(<svg\b[^>]*)(>)([\s\S]*)(<\/svg>)/i, (_match, opening: string, closeOpening: string, content: string, closing: string) =>
+    `${opening} data-preview-normalized="true"${closeOpening}<g data-preview-normalization="true" transform="translate(${-boundsX} ${-boundsY})">${content}</g>${closing}`)
+}
 
 const getImportedGeometry = (svg: string) => {
   const bounds = readImportMetadata(svg, 'data-path-bounds')
@@ -146,7 +171,8 @@ const svgToDataUri = (svg: string) => `data:image/svg+xml;charset=utf-8,${encode
 export const createImportedObjects = (pathSvgs: string[], fileName: string, stockDepth: number): SvgObject[] => pathSvgs.map((pathSvg, index) => {
   const pathBounds = readImportMetadata(pathSvg, 'data-path-bounds')
   const originalPathData = getPathData(pathSvg)
-  const localPathData = pathBounds && pathBounds.length === 4
+  const hasTransform = /<(?:g|path)\b[^>]*\btransform=["']/i.test(pathSvg)
+  const localPathData = !hasTransform && pathBounds && pathBounds.length === 4
     ? translatePathData(originalPathData, pathBounds[0], pathBounds[1])
     : originalPathData
 

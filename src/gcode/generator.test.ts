@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import JSZip from 'jszip'
+import { ContourOffsetter } from './contour-offsetter'
 import { createGcodeZip, generateGcode, isClosedContour, sanitizeOperationName } from './generator'
 import { toMachinePoint } from './helpers'
 import { SvgPathFlattener } from './path-flattener'
@@ -115,7 +116,7 @@ describe('gcode generator', () => {
       height: 20,
       x: 20,
       y: 30,
-      svg: '<svg data-path-bounds="6 8 10 20"><g transform="matrix(0.1 0 0 0.1 5 7)"><path /></g></svg>',
+      svg: '<svg data-path-bounds="5.4 7.2 10 20"><g transform="matrix(0.1 0 0 0.1 5 7)"><path /></g></svg>',
     })
     const gcode = generateGcode(transformedFlower, stock)
     const points = gcode.split('\n')
@@ -169,6 +170,23 @@ describe('gcode generator', () => {
     expect(contourStarts.length).toBeGreaterThan(1)
     expect(contourStarts[0].x).toBeLessThan(contourStarts.at(-1)?.x ?? 0)
     expect(contourStarts[0].y).toBeLessThan(contourStarts.at(-1)?.y ?? 0)
+  })
+
+  it('preserves internal holes while pocketing the filled region', () => {
+    const pocket = new ContourOffsetter().pocket([
+      [{ x: 0, y: 0 }, { x: 40, y: 0 }, { x: 40, y: 40 }, { x: 0, y: 40 }, { x: 0, y: 0 }],
+      [{ x: 10, y: 10 }, { x: 10, y: 30 }, { x: 30, y: 30 }, { x: 30, y: 10 }, { x: 10, y: 10 }],
+    ], 4, 0.5)
+    const holeContours = pocket.filter((contour) => {
+      const signedArea = contour.reduce((area, point, index) => {
+        const next = contour[(index + 1) % contour.length]
+        return area + point.x * next.y - next.x * point.y
+      }, 0) / 2
+      return signedArea < 0
+    })
+
+    expect(holeContours.length).toBeGreaterThan(0)
+    expect(Math.min(...holeContours.flatMap((contour) => contour.map((point) => point.x)))).toBeLessThan(10)
   })
 
   it('uses the conical tool width at each depth when pocketing', () => {

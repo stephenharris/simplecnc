@@ -37,17 +37,49 @@ export class ContourOffsetter {
 
     const ringContours: Contour[] = []
     const stepOverDistance = toolDiameter * stepOverRatio
-    let currentContours = this.offset(closedContours, -toolDiameter / 2)
+    let currentContours = this.offsetCompound(this.union(closedContours), -toolDiameter / 2)
     while (currentContours.length > 0) {
       ringContours.push(...currentContours)
-      const nextContours = currentContours.flatMap((contour) => {
-        const currentArea = Math.abs(this.polygonArea(contour))
-        return this.offset([contour], -stepOverDistance).filter((candidate) => Math.abs(this.polygonArea(candidate)) < currentArea - POINT_TOLERANCE)
-      })
-      if (nextContours.length === 0) break
+      const nextContours = this.offsetCompound(currentContours, -stepOverDistance)
+      const currentArea = currentContours.reduce((area, contour) => area + this.polygonArea(contour), 0)
+      const nextArea = nextContours.reduce((area, contour) => area + this.polygonArea(contour), 0)
+      if (nextContours.length === 0 || nextArea >= currentArea - POINT_TOLERANCE) break
       currentContours = nextContours
     }
     return ringContours.reverse()
+  }
+
+  private union(contours: Contour[]): Contour[] {
+    const clipper = new ClipperLib.Clipper()
+    clipper.AddPaths(this.toClipperPaths(contours), ClipperLib.PolyType.ptSubject, true)
+    const solution: ClipperLib.Paths = []
+    clipper.Execute(ClipperLib.ClipType.ctUnion, solution, ClipperLib.PolyFillType.pftNonZero, ClipperLib.PolyFillType.pftNonZero)
+    return this.fromClipperPaths(solution)
+  }
+
+  private offsetCompound(contours: Contour[], delta: number): Contour[] {
+    if (contours.length === 0) return []
+    const offsetter = new ClipperLib.ClipperOffset()
+    offsetter.AddPaths(this.toClipperPaths(contours), ClipperLib.JoinType.jtRound, ClipperLib.EndType.etClosedPolygon)
+    const solution: ClipperLib.Paths = []
+    offsetter.Execute(solution, delta * 1000)
+    return this.fromClipperPaths(solution)
+  }
+
+  private toClipperPaths(contours: Contour[]): ClipperLib.Paths {
+    const scale = 1000
+    return contours.map((contour) => contour.map((point) => ({
+      X: Math.round(point.x * scale),
+      Y: Math.round(point.y * scale),
+    })))
+  }
+
+  private fromClipperPaths(paths: ClipperLib.Paths): Contour[] {
+    const scale = 1000
+    return paths
+      .map((path) => path.map((point) => ({ x: point.X / scale, y: point.Y / scale })))
+      .map((path) => this.closeContour(path))
+      .filter(isClosedContour)
   }
 
   private polygonArea(contour: Contour) {

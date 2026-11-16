@@ -22,9 +22,10 @@ type SvgTransform = {
   f: number
   boundsX: number
   boundsY: number
+  transformed: boolean
 }
 
-const IDENTITY_TRANSFORM: SvgTransform = { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0, boundsX: 0, boundsY: 0 }
+const IDENTITY_TRANSFORM: SvgTransform = { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0, boundsX: 0, boundsY: 0, transformed: false }
 
 const multiplyTransforms = (left: SvgTransform, right: SvgTransform): SvgTransform => ({
   a: left.a * right.a + left.c * right.b,
@@ -35,6 +36,7 @@ const multiplyTransforms = (left: SvgTransform, right: SvgTransform): SvgTransfo
   f: left.b * right.e + left.d * right.f + left.f,
   boundsX: 0,
   boundsY: 0,
+  transformed: left.transformed || right.transformed,
 })
 
 const transformFromText = (value: string): SvgTransform => {
@@ -46,24 +48,24 @@ const transformFromText = (value: string): SvgTransform => {
     switch (name) {
       case 'matrix':
         if (values.length !== 6) throw new Error(`Invalid SVG matrix transform "${value}".`)
-        next = { a: values[0], b: values[1], c: values[2], d: values[3], e: values[4], f: values[5], boundsX: 0, boundsY: 0 }
+        next = { a: values[0], b: values[1], c: values[2], d: values[3], e: values[4], f: values[5], boundsX: 0, boundsY: 0, transformed: true }
         break
       case 'translate':
         if (values.length < 1 || values.length > 2) throw new Error(`Invalid SVG translate transform "${value}".`)
-        next = { ...IDENTITY_TRANSFORM, e: values[0], f: values[1] ?? 0 }
+        next = { ...IDENTITY_TRANSFORM, e: values[0], f: values[1] ?? 0, transformed: true }
         break
       case 'scale':
         if (values.length < 1 || values.length > 2) throw new Error(`Invalid SVG scale transform "${value}".`)
-        next = { ...IDENTITY_TRANSFORM, a: values[0], d: values[1] ?? values[0] }
+        next = { ...IDENTITY_TRANSFORM, a: values[0], d: values[1] ?? values[0], transformed: true }
         break
       case 'rotate': {
         if (values.length !== 1 && values.length !== 3) throw new Error(`Invalid SVG rotate transform "${value}".`)
         const radians = values[0] * Math.PI / 180
-        const rotation = { ...IDENTITY_TRANSFORM, a: Math.cos(radians), b: Math.sin(radians), c: -Math.sin(radians), d: Math.cos(radians) }
+        const rotation = { ...IDENTITY_TRANSFORM, a: Math.cos(radians), b: Math.sin(radians), c: -Math.sin(radians), d: Math.cos(radians), transformed: true }
         if (values.length === 1) next = rotation
         else {
-          const toCenter = { ...IDENTITY_TRANSFORM, e: values[1], f: values[2] }
-          const fromCenter = { ...IDENTITY_TRANSFORM, e: -values[1], f: -values[2] }
+          const toCenter = { ...IDENTITY_TRANSFORM, e: values[1], f: values[2], transformed: true }
+          const fromCenter = { ...IDENTITY_TRANSFORM, e: -values[1], f: -values[2], transformed: true }
           next = multiplyTransforms(multiplyTransforms(toCenter, rotation), fromCenter)
         }
         break
@@ -73,15 +75,28 @@ const transformFromText = (value: string): SvgTransform => {
         if (values.length !== 1) throw new Error(`Invalid SVG skew transform "${value}".`)
         const skew = Math.tan(values[0] * Math.PI / 180)
         next = name === 'skewX'
-          ? { ...IDENTITY_TRANSFORM, c: skew }
-          : { ...IDENTITY_TRANSFORM, b: skew }
+          ? { ...IDENTITY_TRANSFORM, c: skew, transformed: true }
+          : { ...IDENTITY_TRANSFORM, b: skew, transformed: true }
         break
       }
       default:
         throw new Error(`Unsupported SVG transform "${name}".`)
     }
-    if (Object.values(next).some((entry) => !Number.isFinite(entry))) throw new Error(`Invalid SVG transform "${value}".`)
+    if (![next.a, next.b, next.c, next.d, next.e, next.f].every(Number.isFinite)) {
+      throw new Error(`Invalid SVG transform "${value}".`)
+    }
     transform = multiplyTransforms(transform, next)
+  }
+  return transform
+}
+
+export const getSvgTransform = (svg: string): SvgTransform => {
+  let transform = { ...IDENTITY_TRANSFORM }
+  for (const [, attributes] of svg.matchAll(/<(?:g|path)\b([^>]*)>/gi)) {
+    if (/\bdata-preview-normalization=["']true["']/i.test(attributes)) continue
+    const value = attributes.match(/\btransform=["']([^"']+)["']/i)?.[1]
+    if (!value) continue
+    transform = multiplyTransforms(transform, transformFromText(value))
   }
   return transform
 }
@@ -90,20 +105,17 @@ export const getObjectPathTransform = (object: SvgObject): SvgTransform => {
   const bounds = object.svg.match(/\bdata-path-bounds=["']([^"']+)["']/i)?.[1].trim().split(/\s+/).map(Number)
   const boundsX = bounds?.length === 4 && Number.isFinite(bounds[0]) ? bounds[0] : 0
   const boundsY = bounds?.length === 4 && Number.isFinite(bounds[1]) ? bounds[1] : 0
-  let transform = { ...IDENTITY_TRANSFORM }
-  for (const [, value] of object.svg.matchAll(/<(?:g|path)\b[^>]*\btransform=["']([^"']+)["']/gi)) {
-    transform = multiplyTransforms(transform, transformFromText(value))
-  }
+  const transform = getSvgTransform(object.svg)
   return { ...transform, boundsX, boundsY }
 }
 
 export const toMachinePoint = (point: Point, object: SvgObject, pathTransform = IDENTITY_TRANSFORM): Point => {
-  const rawX = point.x + pathTransform.boundsX
-  const rawY = point.y + pathTransform.boundsY
-  const transformedPoint = {
-    x: pathTransform.a * rawX + pathTransform.c * rawY + pathTransform.e - pathTransform.boundsX,
-    y: pathTransform.b * rawX + pathTransform.d * rawY + pathTransform.f - pathTransform.boundsY,
-  }
+  const transformedPoint = pathTransform.transformed
+    ? {
+        x: pathTransform.a * point.x + pathTransform.c * point.y + pathTransform.e - pathTransform.boundsX,
+        y: pathTransform.b * point.x + pathTransform.d * point.y + pathTransform.f - pathTransform.boundsY,
+      }
+    : point
 
   const bounds = object.pathBoundsWidth && object.pathBoundsHeight
     ? { x: object.pathBoundsX ?? 0, y: object.pathBoundsY ?? 0, width: object.pathBoundsWidth, height: object.pathBoundsHeight }

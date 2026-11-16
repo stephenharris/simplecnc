@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Stock, SvgObject } from '../types/cnc'
-import { createImportedObjects } from './svg'
+import { createImportedObjects, normalizeSvgPreview } from './svg'
 import { deserializeProject, serializeProject } from './project'
 
 describe('project persistence', () => {
@@ -50,6 +50,25 @@ describe('project persistence', () => {
     ], 'demo', 12)
 
     expect(object.src).toMatch(/^data:image\/svg\+xml/)
+  })
+
+  it('keeps transformed paths visible inside their normalized SVG viewBox', () => {
+    const pathData = 'M 0 0 L 100 0 L 100 200 L 0 200 Z'
+    const [object] = createImportedObjects([
+      `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 20" data-parent-viewbox="0 0 100 100" data-path-bounds="10 20 10 20"><g transform="matrix(0.1 0 0 0.1 10 20)"><path d="${pathData}" /></g></svg>`,
+    ], 'flower', 12)
+
+    expect(object.pathData).toBe(pathData)
+    expect(object.svg).toContain('data-preview-normalized="true"')
+    expect(object.svg).toContain('data-preview-normalization="true" transform="translate(-10 -20)"')
+    expect(object.svg).toContain(`d="${pathData}"`)
+  })
+
+  it('normalizes transformed SVG previews from projects saved before the preview fix', () => {
+    const savedSvg = '<svg viewBox="0 0 10 20" data-path-bounds="15 25 10 20"><g transform="matrix(0.1 0 0 0.1 10 20)"><path d="M 0 0 L 100 0 L 100 200 L 0 200 Z" /></g></svg>'
+
+    expect(normalizeSvgPreview(savedSvg)).toContain('data-preview-normalization="true" transform="translate(-10 -20)"')
+    expect(normalizeSvgPreview(normalizeSvgPreview(savedSvg))).toBe(normalizeSvgPreview(savedSvg))
   })
 
 })

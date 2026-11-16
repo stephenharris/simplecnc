@@ -4,6 +4,7 @@ import './Canvas.css'
 import { AxisAlignedBoundingBox } from '../utils/geometry'
 import { snapToObjectAlignment } from '../utils/alignmentSnap'
 import { getDepthColor } from '../utils/color'
+import { normalizeSvgPreview } from '../utils/svg'
 import { Grid } from './Grid'
 import type { GridSnapSettings } from '../utils/grid'
 
@@ -237,7 +238,7 @@ export function Canvas({ objects, selectedIds, stock, zoom, gridSnap, onGridSnap
                     height: '100%',
                     objectFit: 'contain',
                   }}
-                  dangerouslySetInnerHTML={{ __html: object.svg }}
+                  dangerouslySetInnerHTML={{ __html: normalizeSvgPreview(object.svg) }}
                 />
 
               </div>
