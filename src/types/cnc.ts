@@ -41,6 +41,7 @@ export type Stock = {
   width: number
   height: number
   depth: number
+  origin?: 'bottom-left' | 'center'
 }
 
 export type Point = {

@@ -17,14 +17,14 @@ export class PocketOperation extends GcodeOperation {
 
     if(this.object.cut.finalPassStepOver && this.object.cut.finalPassStepOver < stepOver ) { 
       lines.push(`; Final pass with step over ${this.object.cut.finalPassStepOver}%`);
-      this.addFinalDepthPass(lines, maxDepth, this.object.cut.finalPassStepOver);
+      this.addFinalDepthPass(lines, maxDepth, this.object.cut.finalPassStepOver, stock);
     }
   }
 
-  private addFinalDepthPass(lines: string[], depth: number, stepOver: number) {
+  private addFinalDepthPass(lines: string[], depth: number, stepOver: number, stock: Stock) {
     const contours = this.pathFlattener
       .flatten(this.object.pathData)
-      .map((contour) => contour.map((point) => toMachinePoint(point, this.object, this.pathTransform)))
+      .map((contour) => contour.map((point) => toMachinePoint(point, this.object, this.pathTransform, stock)))
 
     const adjustedContours = this.contourOffsetter.pocket(contours, this.cuttingDiameterAtDepth(depth), stepOver / 100)
     writeToolpath(lines, this.object, depth, adjustedContours)

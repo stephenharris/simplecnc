@@ -6,7 +6,7 @@ import type { Point, Stock, SvgObject } from '../types/cnc'
 import type { GridSnapSettings } from '../utils/grid'
 import { snapToGrid } from '../utils/grid'
 
-const defaultStock: Stock = { width: 400, height: 300, depth: 12 }
+const defaultStock: Stock = { width: 400, height: 300, depth: 12, origin: 'bottom-left' }
 
 const loadInitialProject = (): ProjectSnapshot => {
   const storedProject = loadProjectFromStorage()

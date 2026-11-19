@@ -71,6 +71,17 @@ export function LeftSidebar({ objects, stock, fileInput, onImport, onSelect, onS
             <CommitInput type="number" value={stock.height.toString()} onCommit={(value) => onStockChange({ height: Number(value) })} />
           </label>
         </div>
+        <label>
+          G-code origin
+          <select
+            aria-label="G-code origin"
+            value={stock.origin ?? 'bottom-left'}
+            onChange={(event) => onStockChange({ origin: event.target.value === 'center' ? 'center' : 'bottom-left' })}
+          >
+            <option value="bottom-left">Bottom-left</option>
+            <option value="center">Center</option>
+          </select>
+        </label>
         <label className="stock-depth">
           Material depth
           <input type="number" min="0" value={stock.depth} onChange={(event) => onStockChange({ depth: Math.max(0, Number(event.target.value)) })} />

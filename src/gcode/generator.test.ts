@@ -71,6 +71,14 @@ describe('gcode generator', () => {
     expect(gcode.endsWith('M2\n')).toBe(true)
   })
 
+  it('emits center-origin coordinates relative to the stock center', () => {
+    const gcode = generateGcode(makeObject(), { ...stock, origin: 'center' })
+
+    expect(gcode).toContain('origin: center of stock')
+    expect(gcode).toContain('G0 X-30.000 Y-10.000')
+    expect(gcode).toContain('G0 X0 Y0')
+  })
+
   it('uses each cut operation’s feed, plunge, and depth-per-pass settings', () => {
     const gcode = generateGcode(makeObject({
       cut: { feedRate: 850, plungeRate: 125, depthPerPass: 0.4 },

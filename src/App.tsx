@@ -58,7 +58,7 @@ function App() {
   })
 
   const newProject = () => {
-    project.setProject({ stock: { width: 400, height: 300, depth: 12 }, objects: [] })
+    project.setProject({ stock: { width: 400, height: 300, depth: 12, origin: 'bottom-left' }, objects: [] })
     selection.setSelectedIds([])
     clearProjectFromStorage()
   }

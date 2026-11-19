@@ -19,7 +19,7 @@ export const generateGcode = (object: SvgObject, stock: Stock): string => {
   const toolDiameter = bit.diameter
   const lines = [
     `; SimpleCNC / ${object.operationName}`, 
-    '; GRBL 1.1 / Z0 at material top / origin: bottom-left', 
+    `; GRBL 1.1 / Z0 at material top / origin: ${stock.origin === 'center' ? 'center of stock' : 'bottom-left'}`,
     `; Stepdown: ${object.cut.depthPerPass.toFixed(2)} mm`,
     'G21', 
     'G90', 

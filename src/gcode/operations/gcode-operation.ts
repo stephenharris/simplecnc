@@ -19,13 +19,13 @@ export abstract class GcodeOperation {
   }
 
   generateDepthPasses(lines: string[], stock: Stock) {
-    forEachDepthPass(this.object, stock, (depth) => this.addDepthPass(lines, depth))
+    forEachDepthPass(this.object, stock, (depth) => this.addDepthPass(lines, depth, stock))
   }
 
-  protected addDepthPass(lines: string[], depth: number) {
+  protected addDepthPass(lines: string[], depth: number, stock: Stock) {
     const contours = this.pathFlattener
       .flatten(this.object.pathData)
-      .map((contour) => contour.map((point) => toMachinePoint(point, this.object, this.pathTransform)))
+      .map((contour) => contour.map((point) => toMachinePoint(point, this.object, this.pathTransform, stock)))
     writeToolpath(lines, this.object, depth, this.adjustContours(contours, depth))
   }
 

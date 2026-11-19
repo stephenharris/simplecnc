@@ -187,8 +187,8 @@ export function Canvas({ objects, selectedIds, stock, zoom, gridSnap, onGridSnap
         <div className="workbench" style={{ width: `${900 * zoom / 100}px`, aspectRatio: `${stock.width} / ${stock.height}` }}>
           <div className="stock-label">STOCK / {stock.width} × {stock.height} MM</div>
           <div className="stock-surface">
-            <Grid maxSpan={stock.width} direction="vertical" />
-            <Grid maxSpan={stock.height} direction="horizontal" />
+            <Grid maxSpan={stock.width} origin={stock.origin || 'bottom-left'} direction="vertical" />
+            <Grid maxSpan={stock.height} origin={stock.origin || 'bottom-left'} direction="horizontal" />
             {selectedIds.length > 0 && <div 
               className='axis-aligned-selection-box'
               style={{

@@ -6,7 +6,7 @@ import { deserializeProject, serializeProject } from './project'
 describe('project persistence', () => {
   it('serializes and restores stock and objects without losing metadata', () => {
     const project: { stock: Stock, objects: SvgObject[] } = {
-      stock: { width: 400, height: 300, depth: 12 },
+      stock: { width: 400, height: 300, depth: 12, origin: 'center' },
       objects: [
         {
           id: 42,
@@ -50,6 +50,16 @@ describe('project persistence', () => {
     ], 'demo', 12)
 
     expect(object.src).toMatch(/^data:image\/svg\+xml/)
+  })
+
+  it('defaults legacy projects without an origin to bottom-left', () => {
+    const project = deserializeProject(JSON.stringify({
+      version: 1,
+      stock: { width: 400, height: 300, depth: 12 },
+      objects: [],
+    }))
+
+    expect(project.stock.origin).toBe('bottom-left')
   })
 
   it('keeps transformed paths visible inside their normalized SVG viewBox', () => {

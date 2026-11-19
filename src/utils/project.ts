@@ -29,7 +29,10 @@ export const deserializeProject = (raw: string): ProjectFile => {
 
     return {
       version: 1,
-      stock: parsed.stock,
+      stock: {
+        ...parsed.stock,
+        origin: parsed.stock.origin === 'center' ? 'center' : 'bottom-left',
+      },
       objects: parsed.objects as SvgObject[],
       savedAt: typeof parsed.savedAt === 'string' ? parsed.savedAt : undefined,
     }

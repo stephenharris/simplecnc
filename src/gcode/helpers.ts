@@ -1,4 +1,4 @@
-import type { Contour, Point, SvgObject } from '../types/cnc'
+import type { Contour, Point, Stock, SvgObject } from '../types/cnc'
 
 export const POINT_TOLERANCE = 0.25
 
@@ -109,7 +109,7 @@ export const getObjectPathTransform = (object: SvgObject): SvgTransform => {
   return { ...transform, boundsX, boundsY }
 }
 
-export const toMachinePoint = (point: Point, object: SvgObject, pathTransform = IDENTITY_TRANSFORM): Point => {
+export const toMachinePoint = (point: Point, object: SvgObject, pathTransform = IDENTITY_TRANSFORM, stock?: Pick<Stock, 'width' | 'height' | 'origin'>): Point => {
   const transformedPoint = pathTransform.transformed
     ? {
         x: pathTransform.a * point.x + pathTransform.c * point.y + pathTransform.e - pathTransform.boundsX,
@@ -130,10 +130,12 @@ export const toMachinePoint = (point: Point, object: SvgObject, pathTransform = 
   // Finally, apply rotation around the center of the object.
   const angle = object.rotation * Math.PI / 180
   const center = { x: object.x + object.width / 2, y: object.y + object.height / 2 }
-  return {
+  const machinePoint = {
     x: center.x + (x - center.x) * Math.cos(angle) - (y - center.y) * Math.sin(angle),
     y: center.y + (x - center.x) * Math.sin(angle) + (y - center.y) * Math.cos(angle),
   }
+  if (stock?.origin !== 'center') return machinePoint
+  return { x: machinePoint.x - stock.width / 2, y: machinePoint.y - stock.height / 2 }
 }
 
 export const sanitizeOperationName = (name: string) => name.trim().replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() || 'operation'
