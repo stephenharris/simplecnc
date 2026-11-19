@@ -30,6 +30,29 @@ export class ContourOffsetter {
     return output.filter(isClosedContour)
   }
 
+  features(contours: Contour[]): Contour[][] {
+    const closedContours = contours.filter(isClosedContour)
+    if (closedContours.length === 0) return []
+
+    const tree = new ClipperLib.PolyTree()
+    const clipper = new ClipperLib.Clipper()
+    clipper.AddPaths(this.toClipperPaths(closedContours), ClipperLib.PolyType.ptSubject, true)
+    clipper.Execute(ClipperLib.ClipType.ctUnion, tree, ClipperLib.PolyFillType.pftNonZero, ClipperLib.PolyFillType.pftNonZero)
+
+    const features: Contour[][] = []
+    const collectFeatures = (node: ClipperLib.PolyNode) => {
+      node.Childs().forEach((child) => {
+        if (!child.IsHole()) {
+          const paths = [child.Contour(), ...child.Childs().filter((hole) => hole.IsHole()).map((hole) => hole.Contour())]
+          features.push(this.fromClipperPaths(paths))
+        }
+        collectFeatures(child)
+      })
+    }
+    collectFeatures(tree)
+    return features
+  }
+
   pocket(contours: Contour[], toolDiameter: number, stepOverRatio: number): Contour[] {
     const closedContours = contours.filter(isClosedContour)
     if (closedContours.length === 0) return []

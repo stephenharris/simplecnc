@@ -180,6 +180,23 @@ describe('gcode generator', () => {
     expect(contourStarts[0].y).toBeLessThan(contourStarts.at(-1)?.y ?? 0)
   })
 
+  it('cuts each disconnected pocket feature through all depths before starting the next', () => {
+    const pocket = generateGcode(makeObject({
+      cut: { operation: 'pocket', bitId: '2', depth: 1.4, depthPerPass: 0.7 },
+      width: 40,
+      height: 15,
+      viewBoxWidth: 40,
+      viewBoxHeight: 15,
+      pathData: 'M 0 0 L 15 0 L 15 15 L 0 15 Z M 25 0 L 40 0 L 40 15 L 25 15 Z',
+    }), stock)
+    const passDepths = pocket
+      .split('\n')
+      .filter((line) => line.startsWith('; Pass depth:'))
+      .map((line) => line.match(/\d+\.\d+/)?.[0])
+
+    expect(passDepths).toEqual(['0.700', '1.400', '0.700', '1.400'])
+  })
+
   it('preserves internal holes while pocketing the filled region', () => {
     const pocket = new ContourOffsetter().pocket([
       [{ x: 0, y: 0 }, { x: 40, y: 0 }, { x: 40, y: 40 }, { x: 0, y: 40 }, { x: 0, y: 0 }],
