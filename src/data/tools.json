@@ -27,5 +27,12 @@
     "length": 10,
     "diameter": 19.05,
     "description": "Bowl 0.25R 0.75D 0.25S"
+  },
+  "5": {
+    "units": "metric",
+    "shape": "cylindrical",
+    "length": 10,
+    "diameter": 1.6,
+    "description": "2-Flute End Mill 1.6mm"
   }
 }
