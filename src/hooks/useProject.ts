@@ -1,23 +1,26 @@
 import { useCallback, useRef, useState } from 'react'
 import { commitHistory, cloneProjectSnapshot, createHistoryState, pushHistory, redoHistory, replacePresent, undoHistory } from '../utils/history'
 import type { HistoryState, ProjectSnapshot } from '../utils/history'
-import { loadProjectFromStorage } from '../utils/project'
+import { DEFAULT_PROJECT_TITLE, loadProjectFromStorage } from '../utils/project'
 import type { Point, Stock, SvgObject } from '../types/cnc'
 import type { GridSnapSettings } from '../utils/grid'
 import { snapToGrid } from '../utils/grid'
 
 const defaultStock: Stock = { width: 400, height: 300, depth: 12, origin: 'bottom-left' }
 
-const loadInitialProject = (): ProjectSnapshot => {
+const loadInitialProject = (): ProjectSnapshot & { title: string } => {
   const storedProject = loadProjectFromStorage()
   return {
+    title: storedProject?.title ?? DEFAULT_PROJECT_TITLE,
     stock: storedProject?.stock ?? defaultStock,
     objects: storedProject?.objects ?? [],
   }
 }
 
 export function useProject() {
-  const [history, setHistory] = useState<HistoryState>(() => createHistoryState(loadInitialProject()))
+  const [initialProject] = useState(loadInitialProject)
+  const [history, setHistory] = useState<HistoryState>(() => createHistoryState(initialProject))
+  const [title, setTitle] = useState(initialProject.title)
   const dragStartProject = useRef<ProjectSnapshot | null>(null)
   const { objects, stock } = history.present
 
@@ -105,6 +108,8 @@ export function useProject() {
 
   return {
     history,
+    title,
+    setTitle,
     objects,
     stock,
     setProject,

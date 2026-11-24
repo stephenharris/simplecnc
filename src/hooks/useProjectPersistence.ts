@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import type { Stock, SvgObject } from '../types/cnc'
 import { saveProjectToStorage } from '../utils/project'
 
-export function useProjectPersistence(stock: Stock, objects: SvgObject[]) {
+export function useProjectPersistence(title: string, stock: Stock, objects: SvgObject[]) {
   const hasMounted = useRef(false)
 
   useEffect(() => {
@@ -10,6 +10,6 @@ export function useProjectPersistence(stock: Stock, objects: SvgObject[]) {
       hasMounted.current = true
       return
     }
-    saveProjectToStorage({ stock, objects })
-  }, [objects, stock])
+    saveProjectToStorage({ title, stock, objects })
+  }, [objects, stock, title])
 }

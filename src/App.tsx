@@ -13,7 +13,7 @@ import { useProjectFiles } from './hooks/useProjectFiles'
 import { useProjectPersistence } from './hooks/useProjectPersistence'
 import { useSelection } from './hooks/useSelection'
 import { useSvgImport } from './hooks/useSvgImport'
-import { clearProjectFromStorage } from './utils/project'
+import { clearProjectFromStorage, DEFAULT_PROJECT_TITLE } from './utils/project'
 
 function App() {
   const project = useProject()
@@ -33,9 +33,11 @@ function App() {
     setSelectedIds: selection.setSelectedIds,
   })
   const { exportProject, importProject } = useProjectFiles({
+    title: project.title,
     stock: project.stock,
     objects: project.objects,
     setProject: project.setProject,
+    setTitle: project.setTitle,
     clearSelection: () => selection.setSelectedIds([]),
   })
   const importSvgFiles = useSvgImport({
@@ -43,12 +45,12 @@ function App() {
     appendObjects: project.appendObjects,
     setSelectedIds: selection.setSelectedIds,
   })
-  const downloadGcode = useGcodeDownload(project.objects, project.stock)
+  const downloadGcode = useGcodeDownload(project.title, project.objects, project.stock)
   const [zoom, setZoom] = useState(100)
   const fileInput = useRef<HTMLInputElement>(null)
   const projectInput = useRef<HTMLInputElement>(null)
 
-  useProjectPersistence(project.stock, project.objects)
+  useProjectPersistence(project.title, project.stock, project.objects)
   useKeyboardShortcuts({
     copySelected,
     pasteCopied,
@@ -59,6 +61,7 @@ function App() {
 
   const newProject = () => {
     project.setProject({ stock: { width: 400, height: 300, depth: 12, origin: 'bottom-left' }, objects: [] })
+    project.setTitle(DEFAULT_PROJECT_TITLE)
     selection.setSelectedIds([])
     clearProjectFromStorage()
   }
@@ -66,6 +69,8 @@ function App() {
   return (
     <main className="app-shell">
       <Header
+        title={project.title}
+        onTitleChange={project.setTitle}
         onGenerateGCode={downloadGcode}
         onImportProject={() => projectInput.current?.click()}
         onNewProject={newProject}

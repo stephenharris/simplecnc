@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import type { Stock, SvgObject } from '../types/cnc'
 import { createImportedObjects, normalizeSvgPreview } from './svg'
-import { deserializeProject, serializeProject } from './project'
+import { DEFAULT_PROJECT_TITLE, deserializeProject, serializeProject } from './project'
 
 describe('project persistence', () => {
   it('serializes and restores stock and objects without losing metadata', () => {
-    const project: { stock: Stock, objects: SvgObject[] } = {
+    const project: { title: string, stock: Stock, objects: SvgObject[] } = {
+      title: 'Demo sign',
       stock: { width: 400, height: 300, depth: 12, origin: 'center' },
       objects: [
         {
@@ -39,6 +40,7 @@ describe('project persistence', () => {
     const roundTrip = deserializeProject(saved)
 
     expect(roundTrip.version).toBe(1)
+    expect(roundTrip.title).toBe(project.title)
     expect(roundTrip.stock).toEqual(project.stock)
     expect(roundTrip.objects).toEqual(project.objects)
     expect(roundTrip.savedAt).toEqual(expect.any(String))
@@ -60,6 +62,7 @@ describe('project persistence', () => {
     }))
 
     expect(project.stock.origin).toBe('bottom-left')
+    expect(project.title).toBe(DEFAULT_PROJECT_TITLE)
   })
 
   it('keeps transformed paths visible inside their normalized SVG viewBox', () => {

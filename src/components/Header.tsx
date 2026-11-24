@@ -1,6 +1,8 @@
 import './Header.css'
 
 type HeaderProps = {
+  title: string
+  onTitleChange: (title: string) => void
   onGenerateGCode: () => void
   onExportProject: () => void
   onImportProject: () => void
@@ -11,7 +13,7 @@ type HeaderProps = {
   canRedo: boolean
 }
 
-export function Header({ onGenerateGCode, onExportProject, onImportProject, onNewProject, onUndo, onRedo, canUndo, canRedo }: HeaderProps) {
+export function Header({ title, onTitleChange, onGenerateGCode, onExportProject, onImportProject, onNewProject, onUndo, onRedo, canUndo, canRedo }: HeaderProps) {
   return (
     <header className="topbar">
       <div className="brand">
@@ -20,6 +22,14 @@ export function Header({ onGenerateGCode, onExportProject, onImportProject, onNe
           <strong>SimpleCNC</strong>
         </span>
       </div>
+
+      <input
+        className="project-title-input"
+        type="text"
+        aria-label="Project title"
+        value={title}
+        onChange={(event) => onTitleChange(event.target.value)}
+      />
 
       <div className="header-actions">
         <button className="secondary-button" type="button" onClick={onUndo} disabled={!canUndo}>

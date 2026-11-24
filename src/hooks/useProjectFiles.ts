@@ -12,15 +12,17 @@ const readFileAsText = (file: File) => new Promise<string>((resolve, reject) => 
 })
 
 type UseProjectFilesOptions = {
+  title: string
   stock: Stock
   objects: SvgObject[]
   setProject: (project: ProjectSnapshot) => void
+  setTitle: (title: string) => void
   clearSelection: () => void
 }
 
-export function useProjectFiles({ stock, objects, setProject, clearSelection }: UseProjectFilesOptions) {
+export function useProjectFiles({ title, stock, objects, setProject, setTitle, clearSelection }: UseProjectFilesOptions) {
   const exportProject = useCallback(() => {
-    const payload = serializeProject({ stock, objects })
+    const payload = serializeProject({ title, stock, objects })
     const blob = new Blob([payload], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
@@ -28,7 +30,7 @@ export function useProjectFiles({ stock, objects, setProject, clearSelection }: 
     link.download = 'simplecnc-project.json'
     link.click()
     URL.revokeObjectURL(url)
-  }, [objects, stock])
+  }, [objects, stock, title])
 
   const importProject = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -38,11 +40,12 @@ export function useProjectFiles({ stock, objects, setProject, clearSelection }: 
     void readFileAsText(file).then((contents) => {
       const importedProject = deserializeProject(contents)
       setProject({ stock: importedProject.stock, objects: importedProject.objects })
+      setTitle(importedProject.title)
       clearSelection()
     }).catch((error: unknown) => {
       window.alert(error instanceof Error ? error.message : 'Could not import that SimpleCNC project file.')
     })
-  }, [clearSelection, setProject])
+  }, [clearSelection, setProject, setTitle])
 
   return { exportProject, importProject }
 }
